@@ -40,9 +40,9 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch }) {
     <div className="editorial-container py-10">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
-          <p className="editorial-header-num text-xl">Field Ops — WASA / LWMC dispatch</p>
+          <p className="editorial-header-num text-xl">Field Ops — prototype dispatch queue</p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            {openTasks.length} open tasks · priority re-ranks as the rain forecast updates {DISPATCH_CITATION}
+            Decision-support queue for WASA/LWMC-style municipal teams · {openTasks.length} open tasks · priority re-ranks as the rain forecast updates · drain telemetry is simulated {DISPATCH_CITATION}
           </p>
         </div>
         <button type="button" className="btn-lux btn-lux-outline" onClick={onSwitch}><span>← Citizen view</span></button>
@@ -68,7 +68,7 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch }) {
                 }}
                 onClick={() => !isDone && setSelectedTask(selectedTask === t.id ? null : t.id)}
               >
-                {isTop && <div className="scan-line" aria-hidden="true" />}
+                {isTop && <div className="scan-line" aria-hidden="true" style={{ pointerEvents: 'none' }} />}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     {rank ? (
@@ -83,7 +83,7 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch }) {
                         {t.name}
                       </p>
                       <p className="text-[0.72rem] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                        {t.zoneName} · fill {t.fillPct}% · unserved {t.lastServiceHrs}h
+                        {t.zoneName} · fill {t.fillPct}% (simulated) · unserved {t.lastServiceHrs}h
                       </p>
                     </div>
                   </div>
@@ -102,7 +102,7 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch }) {
                     </p>
                     <div className="flex gap-2 mt-3">
                       <button type="button" className="btn-lux" style={{ padding: '0.5rem 1.1rem', fontSize: '0.7rem' }} onClick={(e) => { e.stopPropagation(); complete(t.id) }}>
-                        <span>Mark serviced</span>
+                        <span>Mark serviced (demo)</span>
                       </button>
                       <button type="button" className="btn-lux btn-lux-outline" style={{ padding: '0.5rem 1.1rem', fontSize: '0.7rem' }} onClick={(e) => { e.stopPropagation(); navigate(t) }}>
                         <span>Navigate ↗</span>
@@ -140,7 +140,7 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch }) {
           <div className="lux-card-glass" style={{ padding: '1.1rem 1.3rem' }}>
             <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Completion impact</p>
             <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              Servicing the top 3 open drains this window removes an estimated{' '}
+              Servicing the top 3 open drains this window would remove an estimated{' '}
               <strong style={{ color: 'var(--text-primary)' }}>
                 {blockageTons} tons
               </strong>{' '}

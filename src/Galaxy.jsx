@@ -201,6 +201,16 @@ export default function Galaxy({
   useEffect(() => {
     if (!ctnDom.current) return;
     const ctn = ctnDom.current;
+
+    // Skip the WebGL starfield entirely when WebGL is unavailable or the user
+    // prefers reduced motion — the page degrades to its static CSS background
+    // and every core feature (map, risk engine, data) is unaffected.
+    try {
+      const testCanvas = document.createElement('canvas');
+      if (!testCanvas.getContext('webgl') && !testCanvas.getContext('experimental-webgl')) return;
+    } catch { return }
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
     const renderer = new Renderer({
       alpha: transparent,
       premultipliedAlpha: false
@@ -286,6 +296,16 @@ export default function Galaxy({
     animateId = requestAnimationFrame(update);
     ctn.appendChild(gl.canvas);
 
+    // Pause the render loop whenever the tab is hidden — the starfield is
+    // decoration, and it should never cost battery/GPU while backgrounded.
+    let hidden = false;
+    const onVisibility = () => {
+      hidden = document.hidden;
+      if (!hidden && animateId == null) animateId = requestAnimationFrame(update);
+      if (hidden && animateId != null) { cancelAnimationFrame(animateId); animateId = null }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
     function handleMouseMove(e) {
       const rect = ctn.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
@@ -304,6 +324,7 @@ export default function Galaxy({
     }
 
     return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
       cancelAnimationFrame(animateId);
       window.removeEventListener('resize', resize);
       if (mouseInteraction) {

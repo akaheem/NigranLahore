@@ -119,6 +119,10 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 9999;
 }
 
+/* The top-of-app decorative layers must never intercept clicks — the scan
+   line / grain / vignette sit above cards visually but not interactively. */
+.scan-line, .vignette { pointer-events: none; }
+
 /* ===== Vignette (adapted: lighter than source for data legibility) ===== */
 .vignette {
   position: fixed;
@@ -316,4 +320,20 @@ html { scrollbar-width: thin; scrollbar-color: var(--bg-tertiary) var(--bg-prima
   background: var(--glass-bg);
   color: var(--text-primary);
   border-color: var(--glass-border);
+}
+
+/* Keyboard focus visibility — cheap accessibility win */
+:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Respect reduced-motion for all decorative animation */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

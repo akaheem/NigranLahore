@@ -1,0 +1,319 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Raah — Design System
+   Ported from the Vogue Vista luxury editorial system:
+   glassmorphism, film grain, premium shadows, Cormorant/Inter/Outfit.
+   ============================================================ */
+
+:root {
+  /* Light — linen/charcoal/muted gold */
+  --bg-primary: #EAE6DD;
+  --bg-secondary: #EFE8DC;
+  --bg-tertiary: #EAE6DD;
+  --text-primary: #262522;
+  --text-secondary: #6B675F;
+  --text-muted: #A8957C;
+  --accent-gold: #A8957C;
+  --color-gold: #C6A16A;
+  --accent-gold-dark: #8E7D66;
+  --accent-gold-light: #DDD4C6;
+  --border-light: rgba(38, 37, 34, 0.07);
+  --border-medium: #DDD4C6;
+  --shadow-premium: 0 20px 60px rgba(38, 37, 34, 0.06);
+  --shadow-premium-hover: 0 30px 80px rgba(38, 37, 34, 0.10);
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(168, 149, 124, 0.18);
+  --glass-blur: 18px;
+  --glow-color: rgba(168, 149, 124, 0.06);
+  --cta-bg: #2E2D2A;
+  --cta-text: #F8F6F1;
+
+  /* Status hues — defined in BOTH themes (dark-only tokens in the source caused
+     guaranteed-invalid values in light mode; audit fix). */
+  --risk-safe: #7D9575;
+  --risk-moderate: #C9A66B;
+  --risk-high: #C07A50;
+  --risk-severe: #B05C5C;
+  --risk-info: #8A93B8;
+
+  --font-editorial: 'Cormorant Garamond', Georgia, serif;
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-accent: 'Outfit', sans-serif;
+  --transition-lux: cubic-bezier(0.16, 1, 0.3, 1);
+  --time-lux: 0.8s;
+}
+
+[data-theme='dark'], .dark {
+  /* Dark — plum charcoal/gold */
+  --bg-primary: #1B171F;
+  --bg-secondary: #1A1716;
+  --bg-tertiary: #24201E;
+  --text-primary: #F7F3EE;
+  --text-secondary: #D7CEC4;
+  --text-muted: #B7AA9A;
+  --accent-gold: #C9A66B;
+  --color-gold: #C9A66B;
+  --accent-gold-dark: #B38E59;
+  --accent-gold-light: #DFC7A5;
+  --accent-plum: #4D2F63;
+  --accent-lavender: #B58BE6;
+  --accent-rosegold: #D89D90;
+  --accent-sage: #7D9575;
+  --border-light: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.15);
+  --shadow-premium: 0 25px 60px rgba(0, 0, 0, 0.55), inset 0 1px rgba(255, 255, 255, 0.08), inset 0 0 20px rgba(201, 166, 107, 0.03);
+  --shadow-premium-hover: 0 35px 80px rgba(0, 0, 0, 0.65), inset 0 1px rgba(255, 255, 255, 0.12), inset 0 0 25px rgba(201, 166, 107, 0.05);
+  --glass-bg: rgba(35, 30, 28, 0.72);
+  --glass-border: rgba(201, 166, 107, 0.15);
+  --glass-blur: 20px;
+  --glow-color: rgba(201, 166, 107, 0.04);
+  --cta-bg: #F7F3EE;
+  --cta-text: #211C24;
+
+  --risk-safe: #7D9575;
+  --risk-moderate: #C9A66B;
+  --risk-high: #D08B57;
+  --risk-severe: #D87C6E;
+  --risk-info: #B58BE6;
+}
+
+/* Global base */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  overflow-x: hidden;
+  transition: background-color 0.5s var(--transition-lux), color 0.5s var(--transition-lux), border-color 0.5s var(--transition-lux);
+}
+
+/* Dashboard headings stay Inter (dense data UI) — editorial serif reserved for
+   display headlines via .display-headings. (Audit fix.) */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+
+.display-headings h1, .display-headings h2 {
+  font-family: var(--font-editorial);
+  font-weight: 400;
+}
+
+/* ===== Film grain (adapted: 100% layer, static — cheaper next to WebGL/map) ===== */
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  background: transparent url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E') repeat;
+  opacity: 0.035;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ===== Vignette (adapted: lighter than source for data legibility) ===== */
+.vignette {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(15, 12, 18, 0.28) 100%);
+  pointer-events: none;
+  z-index: 900;
+}
+
+[data-theme='dark'] .vignette, .dark .vignette {
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(10, 8, 14, 0.45) 100%);
+}
+
+/* ===== Glass primitives ===== */
+.lux-card-glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-premium);
+  border-radius: 14px;
+  padding: 1.5rem;
+  transition: transform var(--time-lux) var(--transition-lux), box-shadow var(--time-lux) var(--transition-lux), border-color var(--time-lux) var(--transition-lux);
+}
+
+.lux-card-glass:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-premium-hover);
+  border-color: var(--accent-gold);
+}
+
+/* ===== Editorial layout utilities ===== */
+.editorial-container {
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: 4rem;
+}
+
+@media (max-width: 768px) {
+  .editorial-container { padding-inline: 1.5rem; }
+}
+
+.thin-line {
+  height: 1px;
+  background: var(--border-light);
+  width: 100%;
+}
+
+.editorial-header-num {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  color: var(--accent-gold);
+}
+
+/* ===== Buttons (adapted: tighter padding for dashboard toolbar) ===== */
+.btn-lux {
+  position: relative;
+  overflow: hidden;
+  background: var(--accent-gold);
+  color: #FFFFFF;
+  padding: 0.75rem 1.6rem;
+  font-family: var(--font-accent);
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--time-lux) var(--transition-lux);
+}
+
+.btn-lux::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-gold-dark);
+  transform: translateY(100%);
+  transition: transform var(--time-lux) var(--transition-lux);
+  z-index: 0;
+}
+
+.btn-lux > * { position: relative; z-index: 1; }
+
+.btn-lux:hover::before { transform: translateY(0); }
+
+.btn-lux-outline {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--accent-gold);
+}
+
+.btn-lux-outline:hover { color: var(--accent-gold-dark); }
+
+[data-theme='dark'] .btn-lux-outline, .dark .btn-lux-outline { color: var(--text-primary); }
+
+/* ===== Scan / status effects (from source — the signature dashboard language) ===== */
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+  animation: scan 3.5s var(--transition-lux) infinite;
+  opacity: 0.7;
+}
+
+@keyframes scan {
+  0%, 100% { top: 0; opacity: 0; }
+  10% { opacity: 0.7; }
+  50% { top: calc(100% - 3px); opacity: 0.7; }
+  90% { opacity: 0; }
+}
+
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--accent-gold);
+  animation: sweep 3s var(--transition-lux) infinite;
+}
+
+@keyframes sweep {
+  0% { transform: scale(0.4); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.scan-node {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  animation: pulse-node 2s ease-in-out infinite;
+}
+
+@keyframes pulse-node {
+  0%, 100% { box-shadow: 0 0 0 0 var(--glow-color); opacity: 1; }
+  50% { box-shadow: 0 0 12px 4px var(--glow-color); opacity: 0.7; }
+}
+
+/* ===== Spinner + entrances ===== */
+.lux-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border-light);
+  border-top-color: var(--accent-gold);
+  border-radius: 50%;
+  animation: spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.fade-in-lux {
+  animation: fadeIn 0.8s var(--transition-lux) both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Scrollbar (added Firefox properties — audit fix) ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-gold); }
+html { scrollbar-width: thin; scrollbar-color: var(--bg-tertiary) var(--bg-primary); }
+
+/* ===== Leaflet luxury restyle ===== */
+.leaflet-container {
+  background: var(--bg-tertiary);
+  font-family: var(--font-ui);
+}
+
+.leaflet-tile-pane { filter: saturate(0.55) contrast(0.92) brightness(0.94); }
+
+[data-theme='dark'] .leaflet-tile-pane, .dark .leaflet-tile-pane {
+  filter: saturate(0.4) contrast(1.02) brightness(0.62) hue-rotate(-8deg);
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-premium);
+}
+
+.leaflet-popup-tip { background: var(--glass-bg); border: 1px solid var(--glass-border); }
+
+.leaflet-popup-content { font-family: var(--font-ui); margin: 0.9rem 1.1rem; }
+
+.leaflet-bar a {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+}

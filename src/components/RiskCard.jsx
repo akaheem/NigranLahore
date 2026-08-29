@@ -1,14 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
-
-const bandMeta = score =>
-  score >= 75
-    ? { color: 'var(--risk-severe)', label: 'Severe' }
-    : score >= 50
-      ? { color: 'var(--risk-high)', label: 'High' }
-      : score >= 25
-        ? { color: 'var(--risk-moderate)', label: 'Moderate' }
-        : { color: 'var(--risk-safe)', label: 'Safe' }
+import { bandColor, bandLabel } from '../lib/risk.js'
 
 /**
  * Glass risk card — the citizen's headline view of one hazard.
@@ -16,11 +8,12 @@ const bandMeta = score =>
  */
 export default function RiskCard({ num, title, score, unit = '/100', whys = [], footer, delay = 0 }) {
   const [open, setOpen] = useState(false)
-  const meta = bandMeta(score)
+  const color = bandColor(score)
+  const label = bandLabel(score)
 
   return (
     <div className="lux-card-glass fade-in-lux relative overflow-hidden" style={{ animationDelay: `${delay}s` }}>
-      <div className="thin-line absolute top-0 left-0 right-0" style={{ background: meta.color, height: 3 }} />
+      <div className="thin-line absolute top-0 left-0 right-0" style={{ background: color, height: 3 }} />
       <div className="flex items-start justify-between">
         <div>
           <p className="editorial-header-num text-lg leading-none">{num}</p>
@@ -29,12 +22,12 @@ export default function RiskCard({ num, title, score, unit = '/100', whys = [], 
           </h3>
         </div>
         <div className="text-right">
-          <div className="font-editorial text-5xl leading-none" style={{ color: meta.color }}>
+          <div className="font-editorial text-5xl leading-none" style={{ color }}>
             {score}
             <span className="text-lg" style={{ color: 'var(--text-muted)' }}>{unit}</span>
           </div>
-          <p className="font-accent text-[0.65rem] uppercase tracking-[0.2em] mt-1" style={{ color: meta.color }}>
-            {meta.label}
+          <p className="font-accent text-[0.65rem] uppercase tracking-[0.2em] mt-1" style={{ color }}>
+            {label}
           </p>
         </div>
       </div>

@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
-import CityMap, { bandColor } from './CityMap.jsx'
+import CityMap from './CityMap.jsx'
 import RiskCard from './RiskCard.jsx'
-import { useCityRisk } from '../hooks/useCityRisk.js'
-import { ZONES, LAHORE_CENTER } from '../data/lahore.js'
+import { ZONES } from '../data/lahore.js'
 import { RECORDS, TELEMETRY_NOTE } from '../data/calibration.js'
+import { bandColor, airWhy, heatWhy } from '../lib/risk.js'
 
 const aqiBand = aqi =>
   aqi <= 50 ? { c: 'var(--risk-safe)', l: 'Good' } :
@@ -11,19 +11,45 @@ const aqiBand = aqi =>
   aqi <= 150 ? { c: 'var(--risk-high)', l: 'Unhealthy (sensitive)' } :
   { c: 'var(--risk-severe)', l: 'Unhealthy+' }
 
-export default function CitizenView({ onSwitch }) {
-  const risk = useCityRisk()
-  const [selected, setSelected] = useState(ZONES.find(z => z.id === 'shahdara'))
-  const [showCool, setShowCool] = useState(true)
+function haversineKm(a, b) {
+  const R = 6371
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180
+  const lat1 = (a.lat * Math.PI) / 180
+  const lat2 = (b.lat * Math.PI) / 180
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(h))
+}
 
-  const zoneScore = risk.zoneScores[selected.id]?.score ?? 0
-  const whys = risk.floodWhyFor(selected)
+export default function CitizenView({ risk, selectedZone, onSelectZone, showCool, onToggleCool, onSwitch }) {
+  const [locateMsg, setLocateMsg] = useState(null)
+
+  const zoneScore = risk.zoneScores[selectedZone.id]?.score ?? 0
+  const whys = risk.floodWhyFor(selectedZone)
+
+  const locateMe = () => {
+    if (!navigator.geolocation) {
+      setLocateMsg('Location not available on this device')
+      return
+    }
+    setLocateMsg('Locating…')
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const here = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        const nearest = ZONES.reduce((a, b) => (haversineKm(here, b) < haversineKm(here, a) ? b : a))
+        onSelectZone(nearest)
+        setLocateMsg(`Nearest zone: ${nearest.name}`)
+      },
+      () => setLocateMsg('Location permission denied — pick your area below'),
+      { timeout: 10000 },
+    )
+  }
 
   const actions = useMemo(() => {
     const list = []
     if (zoneScore >= 75) {
       list.push('Move vehicles out of basements & underpasses before the rain window')
-      list.push('Avoid Shahdara / low-lying underpasses 4–8pm')
+      list.push('Avoid low-lying underpasses 4–8pm')
       list.push('Keep emergency kit & documents in a waterproof bag')
     } else if (zoneScore >= 50) {
       list.push('Park on elevated ground this evening')
@@ -39,7 +65,7 @@ export default function CitizenView({ onSwitch }) {
   }, [zoneScore, risk.air, risk.heat])
 
   const band = aqiBand(risk.air?.aqi ?? 0)
-  const aqiSeries = risk.airData?.aqiSeries ?? []
+  const showFallbackNote = risk.status === 'offline' || risk.status === 'stale'
 
   return (
     <div className="editorial-container py-10">
@@ -47,7 +73,7 @@ export default function CitizenView({ onSwitch }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="lux-card-glass py-4" style={{ padding: '1rem 1.25rem' }}>
           <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Rain next 6h</p>
-          <p className="font-editorial text-3xl mt-1">{risk.rain6hMm.toFixed(1)}<span className="text-sm"> mm</span></p>
+          <p className="font-editorial text-3xl mt-1">{risk.rain6hMm != null ? `${risk.rain6hMm.toFixed(1)}` : '—'}<span className="text-sm"> mm</span></p>
         </div>
         <div className="lux-card-glass" style={{ padding: '1rem 1.25rem' }}>
           <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Air (US AQI)</p>
@@ -66,6 +92,12 @@ export default function CitizenView({ onSwitch }) {
         </div>
       </div>
 
+      {showFallbackNote && (
+        <p className="mb-6 font-accent text-[0.65rem] uppercase tracking-[0.15em]" style={{ color: 'var(--risk-moderate)' }}>
+          {risk.status === 'offline' ? 'Snapshot mode — showing static snapshot data' : 'Showing cached data — live feed unavailable'}
+        </p>
+      )}
+
       <div className="grid lg:grid-cols-[1.2fr_1fr] gap-6">
         {/* Map */}
         <div className="lux-card-glass" style={{ padding: '1rem', minHeight: 460, display: 'flex', flexDirection: 'column' }}>
@@ -73,7 +105,7 @@ export default function CitizenView({ onSwitch }) {
             <h3 className="font-accent uppercase tracking-[0.18em] text-sm">Lahore — flood risk zones</h3>
             <button
               type="button"
-              onClick={() => setShowCool(s => !s)}
+              onClick={onToggleCool}
               className="font-accent text-[0.65rem] uppercase tracking-[0.15em]"
               style={{ background: 'none', border: '1px solid var(--accent-gold)', color: 'var(--accent-gold)', borderRadius: 999, padding: '0.25rem 0.8rem', cursor: 'pointer', opacity: showCool ? 1 : 0.5 }}
             >
@@ -83,8 +115,8 @@ export default function CitizenView({ onSwitch }) {
           <div style={{ flex: 1, minHeight: 380 }}>
             <CityMap
               zoneScores={risk.zoneScores}
-              selectedZone={selected}
-              onSelectZone={setSelected}
+              selectedZone={selectedZone}
+              onSelectZone={onSelectZone}
               showCool={showCool}
             />
           </div>
@@ -97,21 +129,34 @@ export default function CitizenView({ onSwitch }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="lux-card-glass">
             <p className="editorial-header-num text-lg">Your area</p>
-            <select
-              value={selected.id}
-              onChange={e => setSelected(ZONES.find(z => z.id === e.target.value))}
-              className="mt-3 w-full font-accent text-sm"
-              style={{
-                background: 'var(--bg-tertiary)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-medium)',
-                borderRadius: 8,
-                padding: '0.7rem 0.9rem',
-                outline: 'none',
-              }}
-            >
-              {ZONES.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-            </select>
+            <div className="mt-3 flex gap-2">
+              <select
+                value={selectedZone.id}
+                onChange={e => onSelectZone(ZONES.find(z => z.id === e.target.value))}
+                className="w-full font-accent text-sm"
+                style={{
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: 8,
+                  padding: '0.7rem 0.9rem',
+                  outline: 'none',
+                }}
+              >
+                {ZONES.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+              </select>
+              <button
+                type="button"
+                onClick={locateMe}
+                className="font-accent text-[0.65rem] uppercase tracking-[0.12em] whitespace-nowrap"
+                style={{ background: 'none', border: '1px solid var(--accent-gold)', color: 'var(--accent-gold)', borderRadius: 8, padding: '0.7rem 0.9rem', cursor: 'pointer' }}
+              >
+                Locate me
+              </button>
+            </div>
+            {locateMsg && (
+              <p className="mt-2 text-[0.7rem]" style={{ color: 'var(--text-muted)' }}>{locateMsg}</p>
+            )}
             <div className="mt-4 flex items-baseline gap-3">
               <span className="font-editorial text-6xl" style={{ color: bandColor(zoneScore) }}>{zoneScore}</span>
               <span className="font-accent uppercase tracking-[0.2em] text-xs" style={{ color: 'var(--text-secondary)' }}>
@@ -132,7 +177,7 @@ export default function CitizenView({ onSwitch }) {
           <div className="lux-card-glass">
             <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>Rain — next 6 hours</p>
             <div className="mt-3 flex items-end gap-2" style={{ height: 80 }}>
-              {(risk.weather?.next6h ?? []).slice(0, 6).map((mm, i) => {
+              {(risk.weather?.next6h ?? []).map((mm, i) => {
                 const h = Math.max(4, Math.min(80, (mm / 5) * 80))
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
@@ -149,20 +194,38 @@ export default function CitizenView({ onSwitch }) {
         </div>
       </div>
 
-      {/* Why drawer */}
+      {/* Why drawer — flood */}
       <div className="mt-8">
         <RiskCard
           num="II"
-          title={`Why ${selected.name} scores ${zoneScore}`}
+          title={`Why ${selectedZone.name} scores ${zoneScore}`}
           score={zoneScore}
           whys={whys}
           footer="Every number traces to a published source or a live feed — open the drawer, check the reasoning."
         />
       </div>
 
+      {/* Multi-hazard — air + heat */}
+      <div className="mt-6 grid md:grid-cols-2 gap-4">
+        <RiskCard
+          num="III"
+          title="Air quality — Lahore center"
+          score={risk.air?.score ?? 0}
+          whys={airWhy(risk.air ?? {})}
+          footer="US AQI from Open-Meteo's air-quality model; readings represent the city center, not street level."
+        />
+        <RiskCard
+          num="IV"
+          title="Heat stress"
+          score={risk.heat?.score ?? 0}
+          whys={heatWhy(risk.heat ?? {}, risk.weather ?? {})}
+          footer="Humid-heat banding; heatwave advisories trigger above 40°C in the Lahore plan."
+        />
+      </div>
+
       {/* Records strip */}
       <div className="mt-10">
-        <p className="editorial-header-num text-xl mb-4">III — The city, lately</p>
+        <p className="editorial-header-num text-xl mb-4">V — The city, lately</p>
         <div className="grid md:grid-cols-5 gap-4">
           {RECORDS.map((r, i) => (
             <div key={i} className="lux-card-glass" style={{ padding: '1rem 1.1rem' }}>

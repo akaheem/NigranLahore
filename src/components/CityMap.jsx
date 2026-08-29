@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { ZONES, DRAIN_NODES, COOL_ASSETS, LAHORE_CENTER } from '../data/lahore.js'
-
-export const bandColor = score =>
-  score >= 75 ? 'var(--risk-severe)' : score >= 50 ? 'var(--risk-high)' : score >= 25 ? 'var(--risk-moderate)' : 'var(--risk-safe)'
+import { bandColor } from '../lib/risk.js'
 
 const coolEmoji = { water: '💧', camp: '⛺', hospital: '🏥' }
 
@@ -27,8 +25,15 @@ function MapFlyTo({ target }) {
 /**
  * City map — zone risk circles + drain nodes + cool assets.
  * Leaflet + free OSM tiles, lux-restyled via index.css filters.
+ * hazard: 'flood' (per-zone scores) | 'air' | 'heat' (city-wide overlays).
  */
-export default function CityMap({ zoneScores = {}, selectedZone, onSelectZone, showDrains = true, showCool = false }) {
+export default function CityMap({ zoneScores = {}, selectedZone, onSelectZone, showDrains = true, showCool = false, hazard = 'flood', air, heat }) {
+  const zoneValue = (z) => {
+    if (hazard === 'heat') return heat?.score ?? 0
+    if (hazard === 'air') return air?.score ?? 0
+    return zoneScores[z.id]?.score ?? 0
+  }
+
   return (
     <MapContainer
       center={[LAHORE_CENTER.lat, LAHORE_CENTER.lng]}
@@ -41,7 +46,7 @@ export default function CityMap({ zoneScores = {}, selectedZone, onSelectZone, s
       <MapFlyTo target={selectedZone} />
 
       {ZONES.map(z => {
-        const r = zoneScores[z.id]?.score ?? 0
+        const r = zoneValue(z)
         return (
           <CircleMarker
             key={z.id}
@@ -58,7 +63,9 @@ export default function CityMap({ zoneScores = {}, selectedZone, onSelectZone, s
             <Popup>
               <div style={{ fontFamily: 'Inter, sans-serif', minWidth: 180 }}>
                 <strong>{z.name}</strong>
-                <div style={{ margin: '6px 0 2px', fontSize: 13 }}>Flood risk: <strong style={{ color: bandColor(r) }}>{r}/100</strong></div>
+                <div style={{ margin: '6px 0 2px', fontSize: 13 }}>Flood risk: <strong style={{ color: bandColor(zoneScores[z.id]?.score ?? 0) }}>{zoneScores[z.id]?.score ?? 0}/100</strong></div>
+                {hazard === 'air' && air && <div style={{ fontSize: 12, opacity: 0.75 }}>City-wide AQI: {air.aqi ?? '—'}</div>}
+                {hazard === 'heat' && heat && <div style={{ fontSize: 12, opacity: 0.75 }}>City-wide heat score: {heat.score}</div>}
                 <div style={{ fontSize: 12, opacity: 0.75 }}>Population {(z.population / 1000).toFixed(0)}k · Drain cap. {(z.drainageCapacity * 100).toFixed(0)}%</div>
               </div>
             </Popup>

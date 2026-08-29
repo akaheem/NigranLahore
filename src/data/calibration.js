@@ -1,22 +1,8 @@
 /**
  * Paper-calibrated parameters — every constant traces to a source in
  * Research Papers/ or verified live data (cited inline). This is what makes
- * Raah's numbers defensible to judges rather than invented.
+ * Nigran's numbers defensible to judges rather than invented.
  */
-
-/**
- * Design-storm rainfall bands for Lahore (mm over 6h), anchored on:
- * - Ahmad et al. 2024 (water-16-01464): LPT-III design storms 75.4-124.5 mm/hr
- *   for 2-25yr return periods (2-hr events), calibrated SWMM, NSE 0.71-0.78.
- * - Verified Open-Meteo archive: 60.7mm/day (2026-07-22) → street flooding.
- * - News sweep: 276mm/24h Jun 2025, ~355mm/24h Aug 2025 (heaviest since 1895).
- */
-export const RAIN_6H = {
-  safe: 5,      // below: routine
-  moderate: 15, // drains at design capacity start to strain
-  high: 30,     // cloudburst class — sore points begin ponding
-  severe: 40,   // WASA 'sore point' flooding likely
-}
 
 /**
  * WASA 'sore points' (paper 13.pdf): 55 documented localities with stagnant

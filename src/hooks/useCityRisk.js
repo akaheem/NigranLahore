@@ -6,12 +6,13 @@ import { floodRisk, heatRisk, airRisk, blockageScore, taskPriority, floodWhy } f
 /**
  * Central derived-state hook: live data + static geo + risk engine →
  * per-zone scores, air/heat cards, and the sorted field-team task queue.
+ * Missing live rain stays `null` (never 0) so the engine can flag it.
  */
 export function useCityRisk() {
-  const { weather, air: airDataRaw, error } = useLahoreData()
+  const { weather, air: airDataRaw, error, status, lastUpdated, retry } = useLahoreData()
 
-  const rain6hMm = weather?.rain6hMm ?? 0
-  const rainNowMm = weather?.rainNowMm ?? 0
+  const rain6hMm = weather?.rain6hMm ?? null
+  const rainNowMm = weather?.rainNowMm ?? null
 
   const zoneScores = useMemo(() => {
     const out = {}
@@ -21,8 +22,16 @@ export function useCityRisk() {
     return out
   }, [rain6hMm, rainNowMm])
 
-  const air = airDataRaw ? airResult(airDataRaw) : null
-  const heat = weather ? heatResult(weather) : null
+  const air = useMemo(() => {
+    if (!airDataRaw) return null
+    return {
+      ...airRisk({ usAqi: airDataRaw.usAqi, pm25: airDataRaw.pm25 }),
+      series: airDataRaw.aqiSeries,
+      times: airDataRaw.aqiTime,
+    }
+  }, [airDataRaw])
+
+  const heat = useMemo(() => (weather ? heatRisk({ tempC: weather.tempC, humidityPct: weather.humidityPct }) : null), [weather])
 
   const taskQueue = useMemo(() => {
     const tasks = DRAIN_NODES.map(n => {
@@ -30,7 +39,9 @@ export function useCityRisk() {
       const pr = taskPriority(n, zone, rain6hMm)
       return {
         ...n,
+        zoneId: n.zone,
         zoneName: zone.name,
+        population: zone.population,
         priority: pr.score,
         parts: pr.parts,
         blockage: blockageScore(n),
@@ -40,17 +51,10 @@ export function useCityRisk() {
   }, [rain6hMm])
 
   return {
-    weather, airData: air, airError: error,
+    weather, air, heat,
     rain6hMm, rainNowMm,
-    zoneScores, air, heat, taskQueue,
+    status, lastUpdated, retry, error,
+    zoneScores, taskQueue,
     floodWhyFor: (zone) => floodWhy(zoneScores[zone.id], { zone, weather, nodes: DRAIN_NODES }),
   }
-}
-
-function airResult(air) {
-  return airRisk({ usAqi: air.usAqi, pm25: air.pm25 })
-}
-
-function heatResult(weather) {
-  return heatRisk({ tempC: weather.tempC, humidityPct: weather.humidityPct })
 }

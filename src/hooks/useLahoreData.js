@@ -63,7 +63,12 @@ async function fetchJson(url) {
 function readCache() {
   try {
     const raw = window.localStorage.getItem(CACHE_KEY)
-    return raw ? JSON.parse(raw) : null
+    const parsed = raw ? JSON.parse(raw) : null
+    // Reject any cache entry that doesn't match the current v2 shape — an old
+    // shape (or a partially-written entry) must never reach the parsers.
+    if (!parsed || !parsed.fetchedAt || !parsed.weather || !parsed.air) return null
+    if (typeof parsed.weather.city !== 'object' || !parsed.weather.city?.hourly?.time) return null
+    return parsed
   } catch {
     return null
   }
@@ -79,34 +84,41 @@ function writeCache(cache) {
 
 /** Parse one location's weather payload into the app's weather shape. */
 function parseWeatherOne(w, now = new Date()) {
+  // Defensive: a malformed payload must throw with a useful message, not
+  // crash deep in a component render.
+  if (!w?.hourly?.time || !Array.isArray(w.hourly.time)) {
+    throw new Error('Malformed weather payload — missing hourly.time')
+  }
   const wTimes = w.hourly.time.map(t => parseKarachiHour(t))
   const wIdx = findHourIndex(wTimes, now)
+  const prec = Array.isArray(w.hourly.precipitation) ? w.hourly.precipitation : []
+  const prob = Array.isArray(w.hourly.precipitation_probability) ? w.hourly.precipitation_probability : []
 
   // Next 6h rainfall window — the core input to the flood engine
-  const next6h = w.hourly.precipitation.slice(wIdx, wIdx + RAIN_WINDOW_HOURS)
-  const next6hProb = w.hourly.precipitation_probability.slice(wIdx, wIdx + RAIN_WINDOW_HOURS)
+  const next6h = prec.slice(wIdx, wIdx + RAIN_WINDOW_HOURS)
+  const next6hProb = prob.slice(wIdx, wIdx + RAIN_WINDOW_HOURS)
   const rain6hMm = next6h.reduce((s, v) => s + (v || 0), 0)
 
   // Next 24h outlook (City Overview timeline); clamped near the horizon
-  const end24 = Math.min(wIdx + 24, w.hourly.precipitation.length)
-  const next24h = w.hourly.precipitation.slice(wIdx, end24)
-  const next24hProb = w.hourly.precipitation_probability.slice(wIdx, end24)
+  const end24 = Math.min(wIdx + 24, prec.length)
+  const next24h = prec.slice(wIdx, end24)
+  const next24hProb = prob.slice(wIdx, end24)
   const next24hTime = w.hourly.time.slice(wIdx, end24)
 
   // Next 72h outlook — the full forecast horizon the UI offers
-  const end72 = Math.min(wIdx + 72, w.hourly.precipitation.length)
-  const next72h = w.hourly.precipitation.slice(wIdx, end72)
-  const next72hProb = w.hourly.precipitation_probability.slice(wIdx, end72)
+  const end72 = Math.min(wIdx + 72, prec.length)
+  const next72h = prec.slice(wIdx, end72)
+  const next72hProb = prob.slice(wIdx, end72)
   const next72hTime = w.hourly.time.slice(wIdx, end72)
 
   // Past 24h rainfall (last 24 hourly entries before now)
-  const past24h = w.hourly.precipitation.slice(Math.max(0, wIdx - 24), wIdx)
+  const past24h = prec.slice(Math.max(0, wIdx - 24), wIdx)
   const rain24hMm = past24h.reduce((s, v) => s + (v || 0), 0)
 
   return {
-    tempC: w.hourly.temperature_2m[wIdx],
-    humidityPct: w.hourly.relative_humidity_2m[wIdx],
-    rainNowMm: w.hourly.precipitation[wIdx] || 0,
+    tempC: w.hourly.temperature_2m?.[wIdx] ?? null,
+    humidityPct: w.hourly.relative_humidity_2m?.[wIdx] ?? null,
+    rainNowMm: prec[wIdx] || 0,
     rain6hMm,
     rain24hMm,
     next6h,
@@ -124,14 +136,18 @@ function parseWeatherOne(w, now = new Date()) {
 
 /** Parse one location's air payload; AQI series only kept where requested. */
 function parseAirOne(a, now = new Date(), withSeries = false) {
+  if (!a?.hourly?.time || !Array.isArray(a.hourly.time)) {
+    throw new Error('Malformed air payload — missing hourly.time')
+  }
   const aIdx = findHourIndex(a.hourly.time.map(t => parseKarachiHour(t)), now)
+  const safe = arr => (Array.isArray(arr) ? arr : [])
   return {
-    pm25: a.hourly.pm2_5[aIdx],
-    pm10: a.hourly.pm10[aIdx],
-    usAqi: a.hourly.us_aqi[aIdx],
+    pm25: a.hourly.pm2_5?.[aIdx] ?? null,
+    pm10: a.hourly.pm10?.[aIdx] ?? null,
+    usAqi: a.hourly.us_aqi?.[aIdx] ?? null,
     ...(withSeries && {
-      aqiSeries: a.hourly.us_aqi.slice(Math.max(0, aIdx - 12), aIdx + 13),
-      aqiTime: a.hourly.time.slice(Math.max(0, aIdx - 12), aIdx + 13),
+      aqiSeries: safe(a.hourly.us_aqi).slice(Math.max(0, aIdx - 12), aIdx + 13),
+      aqiTime: safe(a.hourly.time).slice(Math.max(0, aIdx - 12), aIdx + 13),
     }),
     fetchedAt: now,
   }
@@ -186,8 +202,14 @@ export function useLahoreData() {
           const wById = {}
           const aById = {}
           LOCATIONS.forEach(({ id }) => {
-            if (cached.weather[id]) wById[id] = parseWeatherOne(cached.weather[id], fetchedAt)
-            if (cached.air[id]) aById[id] = parseAirOne(cached.air[id], fetchedAt, id === 'city')
+            // Per-location guards: readCache validates the city entry; zones
+            // may still be partial if the cache was written by an older build.
+            if (cached.weather[id]?.hourly?.time) {
+              try { wById[id] = parseWeatherOne(cached.weather[id], fetchedAt) } catch { /* skip broken entry */ }
+            }
+            if (cached.air[id]?.hourly?.time) {
+              try { aById[id] = parseAirOne(cached.air[id], fetchedAt, id === 'city') } catch { /* skip broken entry */ }
+            }
           })
           setWeather(wById.city ?? null)
           setAir(aById.city ?? null)
@@ -234,8 +256,14 @@ export function useLahoreData() {
           const wById = {}
           const aById = {}
           LOCATIONS.forEach(({ id }) => {
-            if (cache.weather[id]) wById[id] = parseWeatherOne(cache.weather[id], fetchedAt)
-            if (cache.air[id]) aById[id] = parseAirOne(cache.air[id], fetchedAt, id === 'city')
+            // Per-location guards: readCache validates the city entry; zones
+            // may still be partial if the cache was written by an older build.
+            if (cache.weather[id]?.hourly?.time) {
+              try { wById[id] = parseWeatherOne(cache.weather[id], fetchedAt) } catch { /* skip broken entry */ }
+            }
+            if (cache.air[id]?.hourly?.time) {
+              try { aById[id] = parseAirOne(cache.air[id], fetchedAt, id === 'city') } catch { /* skip broken entry */ }
+            }
           })
           setWeather(wById.city ?? null)
           setAir(aById.city ?? null)

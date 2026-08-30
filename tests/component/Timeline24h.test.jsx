@@ -16,7 +16,7 @@ describe('RainTimeline', () => {
 
   it('falls back to a waiting message when empty', () => {
     render(<RainTimeline hours={[]} times={[]} />)
-    expect(screen.getByText(/waiting for live data/i)).toBeInTheDocument()
+    expect(screen.getByText(/Waiting for the live Open-Meteo/i)).toBeInTheDocument()
   })
 
   it('labels every third hour', () => {
@@ -53,6 +53,6 @@ describe('AqiSparkline', () => {
 
   it('falls back to a waiting message when empty', () => {
     render(<AqiSparkline series={[]} times={[]} />)
-    expect(screen.getByText(/waiting for live data/i)).toBeInTheDocument()
+    expect(screen.getByText(/Waiting for the live Open-Meteo/i)).toBeInTheDocument()
   })
 })

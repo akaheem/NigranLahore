@@ -130,11 +130,17 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, s
 
       {/* Outlook — 24h detail + 72h horizon, all live Open-Meteo */}
       <div className="lux-card-glass mb-6" style={{ padding: '1.1rem 1.3rem' }}>
-        <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Next 24 hours — rain (live forecast, Lahore center)</p>
+        <p className="editorial-header-num text-lg">Forecast — when will it rain, and how hard?</p>
+        <p className="text-[0.72rem] mt-1" style={{ color: 'var(--text-secondary)' }}>
+          Hour-by-hour rainfall from Open-Meteo's weather model. In the 24-hour strip each bar is one hour — its height
+          is the millimetres expected and its darkness is how confident the model is. The 72-hour strip compresses three
+          days, so any bar you can see is a rain event worth planning around.
+        </p>
+        <p className="mt-4 font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Next 24 hours — rain, hour by hour</p>
         <div className="mt-3">
-          <RainTimeline hours={risk.weather?.next24h ?? []} times={risk.weather?.next24hTime ?? []} />
+          <RainTimeline hours={risk.weather?.next24h ?? []} times={risk.weather?.next24hTime ?? []} prob={risk.weather?.next24hProb ?? []} />
         </div>
-        <p className="mt-4 font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Next 72 hours — rain chance per hour (live forecast)</p>
+        <p className="mt-5 font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Next 72 hours — the 3-day rain picture</p>
         <div className="mt-3">
           <RainTimeline
             hours={risk.weather?.next72h ?? []}
@@ -143,7 +149,12 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, s
             compact
           />
         </div>
-        <p className="mt-4 font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Air (US AQI) — past 12h to next 12h</p>
+        <p className="mt-5 font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Air quality — US AQI, last 12h → next 12h</p>
+        <p className="text-[0.72rem] mt-1" style={{ color: 'var(--text-secondary)' }}>
+          The Air Quality Index converts PM2.5/PM10 into one health-relevant number: below 50 is fine for everyone,
+          51–100 bothers only the most sensitive, 101–150 is a warning for children and asthma patients, above that is
+          unhealthy for all.
+        </p>
         <div className="mt-3">
           <AqiSparkline series={risk.air?.series ?? []} times={risk.air?.times ?? []} />
         </div>

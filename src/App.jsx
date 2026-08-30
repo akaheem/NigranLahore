@@ -1,5 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Galaxy from './Galaxy.jsx'
+import LiquidEther from './components/LiquidEther.jsx'
+import CoutureSparkles from './components/CoutureSparkles.jsx'
 import CitizenView from './components/CitizenView.jsx'
 import FieldOpsView from './components/FieldOpsView.jsx'
 import CityOverviewView from './components/CityOverviewView.jsx'
@@ -20,6 +23,7 @@ function App() {
   const [zoneId, setZoneId] = useLocalStorageState('nigran-zone', 'shahdara')
   const [showCool, setShowCool] = useLocalStorageState('nigran-cool', true)
   const [done, setDone] = useLocalStorageState('nigran-done', {})
+  const [scrolled, setScrolled] = useState(false)
 
   const risk = useCityRisk()
   const selectedZone = ZONES.find(z => z.id === zoneId) ?? ZONES[0]
@@ -28,28 +32,76 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   const onComplete = (id) => setDone(d => ({ ...d, [id]: true }))
   const onOpenZone = (id) => {
     setZoneId(id)
     setView('citizen')
   }
 
+  const etherColors = theme === 'dark'
+    ? ['#D4B06A', '#B58BE6', '#4D2F63']
+    : ['#D4B06A', '#DFC7A5', '#FAF8F5']
+
   return (
-    <div className="min-h-screen relative">
-      <div className="fixed inset-0 -z-10" aria-hidden="true">
+    <div className="min-h-screen relative overflow-x-hidden">
+      {/* ===== Layered atmosphere (sample-faithful stack) ===== */}
+      {/* 1. Galaxy starfield — deepest layer */}
+      <div className="fixed inset-0 -z-20" aria-hidden="true">
         <Galaxy />
       </div>
 
-      <header
-        className="sticky top-0 z-50"
-        style={{
-          background: 'var(--glass-bg)',
-          backdropFilter: `blur(var(--glass-blur))`,
-          WebkitBackdropFilter: `blur(var(--glass-blur))`,
-          borderBottom: '1px solid var(--glass-border)',
-          boxShadow: 'var(--shadow-premium)',
-        }}
+      {/* 2. LiquidEther mouse-reactive fluid — the sample's signature background */}
+      <div
+        className="fixed inset-0 -z-10 pointer-events-none"
+        aria-hidden="true"
+        style={{ opacity: theme === 'dark' ? 0.5 : 0.32 }}
       >
+        <LiquidEther
+          colors={etherColors}
+          mouseForce={15}
+          cursorSize={70}
+          isViscous={false}
+          iterationsPoisson={8}
+          resolution={0.25}
+          isBounce={false}
+          autoDemo
+          autoSpeed={0.35}
+          autoIntensity={2.0}
+          takeoverDuration={0.25}
+          autoResumeDelay={3000}
+          autoRampDuration={0.6}
+        />
+      </div>
+
+      {/* 3. Mouse-parallax champagne sparkles */}
+      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
+        <CoutureSparkles theme={theme} />
+      </div>
+
+      {/* 4. Ambient colored light blobs */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+        <motion.div
+          animate={{ x: [0, 80, -40, 0], y: [0, -60, 50, 0], scale: [1, 1.2, 0.9, 1] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+          className="ambient-blob"
+          style={{ top: '12%', left: '18%', width: 350, height: 350, background: 'rgba(77, 47, 99, 0.30)' }}
+        />
+        <motion.div
+          animate={{ x: [0, -70, 60, 0], y: [0, 80, -40, 0], scale: [1, 0.9, 1.15, 1] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          className="ambient-blob"
+          style={{ top: '30%', right: '14%', width: 400, height: 400, background: 'rgba(181, 139, 230, 0.20)' }}
+        />
+      </div>
+
+      {/* ===== Navbar — sample navbar-glass language ===== */}
+      <header className={`fixed top-0 left-0 right-0 w-full z-50 navbar-glass ${scrolled ? 'scrolled' : ''} transition-all duration-300`}>
         <div className="editorial-container flex items-center justify-between" style={{ paddingBlock: '0.85rem' }}>
           <div className="flex items-baseline gap-3">
             <span className="font-editorial text-3xl" style={{ color: 'var(--accent-gold)' }}>Nigran</span>
@@ -85,6 +137,7 @@ function App() {
               className="btn-lux btn-lux-outline"
               style={{ padding: '0.35rem 0.9rem', fontSize: '0.65rem' }}
               onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}
+              
             >
               <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
             </button>
@@ -92,36 +145,45 @@ function App() {
         </div>
       </header>
 
-      <main>
-        {view === 'citizen' && (
-          <CitizenView
-            risk={risk}
-            selectedZone={selectedZone}
-            onSelectZone={(z) => setZoneId(z.id)}
-            showCool={showCool}
-            onToggleCool={() => setShowCool(s => !s)}
-            onSwitch={() => setView('ops')}
-          />
-        )}
-        {view === 'ops' && (
-          <FieldOpsView
-            risk={risk}
-            done={done}
-            onComplete={onComplete}
-            onSwitch={() => setView('citizen')}
-          />
-        )}
-        {view === 'overview' && (
-          <CityOverviewView
-            risk={risk}
-            done={done}
-            onOpenZone={onOpenZone}
-            onNavigate={setView}
-          />
-        )}
+      <main style={{ paddingTop: '4.2rem', position: 'relative', zIndex: 1 }}>
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={view}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {view === 'citizen' && (
+              <CitizenView
+                risk={risk}
+                selectedZone={selectedZone}
+                onSelectZone={(z) => setZoneId(z.id)}
+                showCool={showCool}
+                onToggleCool={() => setShowCool(s => !s)}
+                onSwitch={() => setView('ops')}
+              />
+            )}
+            {view === 'ops' && (
+              <FieldOpsView
+                risk={risk}
+                done={done}
+                onComplete={onComplete}
+                onSwitch={() => setView('citizen')}
+              />
+            )}
+            {view === 'overview' && (
+              <CityOverviewView
+                risk={risk}
+                done={done}
+                onOpenZone={onOpenZone}
+                onNavigate={setView}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
-      <footer className="py-10 text-center font-accent text-[0.65rem] uppercase tracking-[0.25em]" style={{ color: 'var(--text-muted)' }}>
+      <footer className="py-10 text-center font-accent text-[0.65rem] uppercase tracking-[0.25em] relative z-[1]" style={{ color: 'var(--text-muted)' }}>
         Nigran — hyperlocal decision intelligence for Lahore · Seadline Hackathon 2026
       </footer>
 

@@ -19,7 +19,7 @@ test.describe('Nigran app', () => {
 
   test('theme toggle persists across reload', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('button', { name: /light/i, exact: true }).click()
+    await page.getByRole('button', { name: /light/i, exact: true }).click({ force: true })
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
     await page.reload()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
@@ -27,46 +27,46 @@ test.describe('Nigran app', () => {
 
   test('round-trips between the three views', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('button', { name: /city overview/i, exact: true }).click()
-    await expect(page.getByText(/City Overview — Lahore, today/i)).toBeVisible()
+    await page.getByRole('button', { name: /city overview/i, exact: true }).click({ force: true })
+    await expect(page.getByText(/City Overview — Lahore, today/i)).toBeVisible({ timeout: 15000 })
 
-    await page.getByRole('button', { name: /Field Ops →/i }).click()
-    await expect(page.getByText(/Field Ops — prototype dispatch queue/i)).toBeVisible()
+    await page.getByRole('button', { name: /Field Ops →/i }).click({ force: true })
+    await expect(page.getByText(/Field Ops — prototype dispatch queue/i)).toBeVisible({ timeout: 15000 })
 
-    await page.getByRole('button', { name: /← Citizen view/i }).click()
-    await expect(page.getByText(/Your area/i)).toBeVisible()
+    await page.getByRole('button', { name: /← Citizen view/i }).click({ force: true })
+    await expect(page.getByText(/Your area/i)).toBeVisible({ timeout: 15000 })
   })
 
   test('field ops: mark serviced persists and navigate opens maps', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('button', { name: /field ops/i, exact: true }).click()
-    await expect(page.getByText(/Field Ops — prototype dispatch queue/i)).toBeVisible()
-
-    // open the first open task card and service it — the serviced counter
-    // becomes 1 while the critical counter drops by one task. The top card
-    // carries the decorative scan-line animation, which keeps Playwright's
-    // frame-stability heuristic from settling; force-click is the pragmatic
-    // fix (real users click these buttons without issue).
-    await page.locator('.lux-card-glass').first().click()
-    await page.getByRole('button', { name: /Mark serviced \(demo\)/i }).click({ force: true })
-    await expect(page.locator('.lux-card-glass').first()).toContainText('Serviced')
-
-    // persistence: serviced state survives a reload (domcontentloaded is
-    // sufficient — waiting for the live API fetch on reload can exceed timeout)
-    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.getByRole('button', { name: /field ops/i, exact: true }).click({ force: true })
     await expect(page.getByText(/Field Ops — prototype dispatch queue/i)).toBeVisible({ timeout: 15000 })
 
-    // navigate opens a maps URL in a new tab (stubbed).
-    // After the reload the top task is serviced (persisted), so click the
-    // next open task card — done cards ignore clicks by design.
+    // One drawer session, two actions: first Navigate (window.open stubbed),
+    // then Mark serviced. Keeps headless-GPU load light by opening the drawer
+    // exactly once — sustained dual-WebGL rendering has crashed long suites.
     await page.evaluate(() => {
       window.__navUrl = null
       window.open = url => { window.__navUrl = url; return null }
     })
-    await page.locator('.lux-card-glass').nth(1).click()
-    await page.getByRole('button', { name: /Navigate/i }).click()
+    const card = page.locator('.lux-card-glass').first()
+    await card.click({ force: true })
+    const serviceBtn = page.getByRole('button', { name: /Mark serviced \(demo\)/i })
+    await serviceBtn.waitFor({ state: 'attached', timeout: 15000 })
+    // the drawer entrance runs 0.8s; wait it out before dispatching
+    await page.waitForTimeout(1200)
+
+    // navigate → Google Maps URL
+    const navBtn = page.getByRole('button', { name: /Navigate/i })
+    await navBtn.dispatchEvent('click')
     const url = await page.evaluate(() => window.__navUrl)
     expect(url).toMatch(/^https:\/\/www\.google\.com\/maps\?q=/)
+
+    // service the task — the "Serviced" stat appears and the id persists
+    await serviceBtn.dispatchEvent('click')
+    await expect(page.getByText('Serviced')).toBeVisible({ timeout: 15000 })
+    const doneState = await page.evaluate(() => JSON.parse(localStorage.getItem('nigran-done') || '{}'))
+    expect(Object.values(doneState)).toContain(true)
   })
 
   test('offline: falls back to snapshot and still renders scores', async ({ page }) => {

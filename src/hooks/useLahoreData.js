@@ -1,17 +1,36 @@
 import { useEffect, useState } from 'react'
-import { LAHORE_CENTER } from '../data/lahore.js'
-import { buildFallbackWeather, buildFallbackAir } from '../data/fallback.js'
+import { ZONES, LAHORE_CENTER } from '../data/lahore.js'
+
+/**
+ * Live weather + air quality — Open-Meteo, no API key, fetched client-side.
+ * ONE multi-location request per endpoint: city center first (for city-level
+ * timelines/counters), then every zone. Every zone's temperature, humidity,
+ * rain, and AQI are its own real model values — never averaged, never invented.
+ *
+ * There is NO synthetic offline snapshot. If the network fails and no cache
+ * exists, values stay null and the UI says so — a missing number is honest,
+ * a fabricated one is not.
+ */
+
+// City center first — response order always matches request order (Open-Meteo).
+const LOCATIONS = [
+  { id: 'city', lat: LAHORE_CENTER.lat, lng: LAHORE_CENTER.lng },
+  ...ZONES.map(z => ({ id: z.id, lat: z.lat, lng: z.lng })),
+]
+const LAT = LOCATIONS.map(l => l.lat.toFixed(4)).join(',')
+const LNG = LOCATIONS.map(l => l.lng.toFixed(4)).join(',')
 
 const WEATHER_URL =
-  `https://api.open-meteo.com/v1/forecast?latitude=${LAHORE_CENTER.lat}&longitude=${LAHORE_CENTER.lng}` +
+  `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LNG}` +
   `&hourly=temperature_2m,relative_humidity_2m,precipitation,precipitation_probability` +
-  `&past_days=2&forecast_days=2&timezone=Asia%2FKarachi`
+  `&past_days=2&forecast_days=4&timezone=Asia%2FKarachi`
 
 const AIR_URL =
-  `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAHORE_CENTER.lat}&longitude=${LAHORE_CENTER.lng}` +
-  `&hourly=pm2_5,pm10,us_aqi&past_days=1&forecast_days=2&timezone=Asia%2FKarachi`
+  `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LNG}` +
+  `&hourly=pm2_5,pm10,us_aqi&past_days=1&forecast_days=4&timezone=Asia%2FKarachi`
 
-const CACHE_KEY = 'nigran-live-cache'
+// v2: multi-location payload shape (arrays, not single objects)
+const CACHE_KEY = 'nigran-live-cache-v2'
 const REFRESH_MS = 10 * 60 * 1000 // refresh every 10 min
 const FRESH_MS = 30 * 60 * 1000 // cache < 30 min old still counts as live
 
@@ -58,7 +77,8 @@ function writeCache(cache) {
   }
 }
 
-function parseWeather(w, now = new Date()) {
+/** Parse one location's weather payload into the app's weather shape. */
+function parseWeatherOne(w, now = new Date()) {
   const wTimes = w.hourly.time.map(t => parseKarachiHour(t))
   const wIdx = findHourIndex(wTimes, now)
 
@@ -72,6 +92,12 @@ function parseWeather(w, now = new Date()) {
   const next24h = w.hourly.precipitation.slice(wIdx, end24)
   const next24hProb = w.hourly.precipitation_probability.slice(wIdx, end24)
   const next24hTime = w.hourly.time.slice(wIdx, end24)
+
+  // Next 72h outlook — the full forecast horizon the UI offers
+  const end72 = Math.min(wIdx + 72, w.hourly.precipitation.length)
+  const next72h = w.hourly.precipitation.slice(wIdx, end72)
+  const next72hProb = w.hourly.precipitation_probability.slice(wIdx, end72)
+  const next72hTime = w.hourly.time.slice(wIdx, end72)
 
   // Past 24h rainfall (last 24 hourly entries before now)
   const past24h = w.hourly.precipitation.slice(Math.max(0, wIdx - 24), wIdx)
@@ -88,36 +114,57 @@ function parseWeather(w, now = new Date()) {
     next24h,
     next24hProb,
     next24hTime,
+    next72h,
+    next72hProb,
+    next72hTime,
     hourlyTime: w.hourly.time.slice(wIdx, wIdx + RAIN_WINDOW_HOURS),
     fetchedAt: now,
   }
 }
 
-function parseAir(a, now = new Date()) {
+/** Parse one location's air payload; AQI series only kept where requested. */
+function parseAirOne(a, now = new Date(), withSeries = false) {
   const aIdx = findHourIndex(a.hourly.time.map(t => parseKarachiHour(t)), now)
   return {
     pm25: a.hourly.pm2_5[aIdx],
     pm10: a.hourly.pm10[aIdx],
     usAqi: a.hourly.us_aqi[aIdx],
-    aqiSeries: a.hourly.us_aqi.slice(Math.max(0, aIdx - 12), aIdx + 13),
-    aqiTime: a.hourly.time.slice(Math.max(0, aIdx - 12), aIdx + 13),
+    ...(withSeries && {
+      aqiSeries: a.hourly.us_aqi.slice(Math.max(0, aIdx - 12), aIdx + 13),
+      aqiTime: a.hourly.time.slice(Math.max(0, aIdx - 12), aIdx + 13),
+    }),
     fetchedAt: now,
   }
 }
 
 /**
- * Live weather + air quality for Lahore (Open-Meteo, no API key).
- * Both endpoints curl-verified 2026-08-29.
+ * Parse a multi-location response array into a { locationId: parsed } map.
+ * Response order matches LOCATIONS order; the first entry is the city center.
+ */
+function parseLocationArray(responses, now, parseFn, extraArgs = []) {
+  const out = {}
+  responses.forEach((payload, i) => {
+    const id = LOCATIONS[i]?.id
+    if (!id) return
+    out[id] = parseFn(payload, now, ...extraArgs)
+  })
+  return out
+}
+
+/**
+ * Live per-zone weather + air quality for Lahore.
  *
  * Status machine:
  *  loading  — first fetch in flight
  *  live     — fresh from the API (or a <30min-old cache after a failure)
  *  stale    — older cache after a failure
- *  offline  — no usable cache; deterministic static snapshot in use
+ *  offline  — no usable cache; values stay null and the UI says so
  */
 export function useLahoreData() {
   const [weather, setWeather] = useState(null)
   const [air, setAir] = useState(null)
+  const [zoneWeather, setZoneWeather] = useState(null)
+  const [zoneAir, setZoneAir] = useState(null)
   const [error, setError] = useState(null)
   const [status, setStatus] = useState('loading')
   const [lastUpdated, setLastUpdated] = useState(null)
@@ -134,11 +181,20 @@ export function useLahoreData() {
       const age = Date.now() - new Date(cached.fetchedAt).getTime()
       const seed = () => {
         if (cancelled) return
-        if (cached.weather) setWeather(parseWeather(cached.weather, new Date(cached.fetchedAt)))
-        if (cached.air) setAir(parseAir(cached.air, new Date(cached.fetchedAt)))
-        if (cached.weather || cached.air) {
+        const fetchedAt = new Date(cached.fetchedAt)
+        if (cached.weather && cached.air) {
+          const wById = {}
+          const aById = {}
+          LOCATIONS.forEach(({ id }) => {
+            if (cached.weather[id]) wById[id] = parseWeatherOne(cached.weather[id], fetchedAt)
+            if (cached.air[id]) aById[id] = parseAirOne(cached.air[id], fetchedAt, id === 'city')
+          })
+          setWeather(wById.city ?? null)
+          setAir(aById.city ?? null)
+          setZoneWeather(wById)
+          setZoneAir(aById)
           setStatus(age < FRESH_MS ? 'live' : 'stale')
-          setLastUpdated(new Date(cached.fetchedAt))
+          setLastUpdated(fetchedAt)
         }
       }
       const t = setTimeout(seed, 0)
@@ -147,32 +203,51 @@ export function useLahoreData() {
 
     async function load() {
       try {
-        const [w, a] = await Promise.all([fetchJson(WEATHER_URL), fetchJson(AIR_URL)])
+        const [wArr, aArr] = await Promise.all([fetchJson(WEATHER_URL), fetchJson(AIR_URL)])
         if (cancelled) return
         const now = new Date()
-        setWeather(parseWeather(w, now))
-        setAir(parseAir(a, now))
+        const weatherById = parseLocationArray(
+          Array.isArray(wArr) ? wArr : [wArr], now,
+          (payload, t) => parseWeatherOne(payload, t),
+        )
+        const airById = parseLocationArray(
+          Array.isArray(aArr) ? aArr : [aArr], now,
+          (payload, t, id) => parseAirOne(payload, t, id === 'city'),
+        )
+        setWeather(weatherById.city ?? null)
+        setAir(airById.city ?? null)
+        setZoneWeather(weatherById)
+        setZoneAir(airById)
         setError(null)
         setStatus('live')
         setLastUpdated(now)
-        writeCache({ weather: w, air: a, fetchedAt: now.toISOString() })
+        writeCache({ weather: weatherById, air: airById, fetchedAt: now.toISOString() })
       } catch (e) {
         if (cancelled) return
         setError(e.message)
-        // Fall back through the cache, then to the static snapshot — a
-        // network failure must never read as "no rain".
+        // Fall back through the cache. No cache → honest nulls: a network
+        // failure must never read as invented values or as "no rain".
         const cache = readCache()
-        if (cache && (cache.weather || cache.air)) {
+        if (cache && cache.weather && cache.air) {
           const fetchedAt = new Date(cache.fetchedAt)
           const age = Date.now() - fetchedAt.getTime()
-          if (cache.weather) setWeather(parseWeather(cache.weather, fetchedAt))
-          if (cache.air) setAir(parseAir(cache.air, fetchedAt))
+          const wById = {}
+          const aById = {}
+          LOCATIONS.forEach(({ id }) => {
+            if (cache.weather[id]) wById[id] = parseWeatherOne(cache.weather[id], fetchedAt)
+            if (cache.air[id]) aById[id] = parseAirOne(cache.air[id], fetchedAt, id === 'city')
+          })
+          setWeather(wById.city ?? null)
+          setAir(aById.city ?? null)
+          setZoneWeather(wById)
+          setZoneAir(aById)
           setLastUpdated(fetchedAt)
           setStatus(age < FRESH_MS ? 'live' : 'stale')
         } else {
-          const now = new Date()
-          setWeather(parseWeather(buildFallbackWeather(now.getTime()), now))
-          setAir(parseAir(buildFallbackAir(now.getTime()), now))
+          setWeather(null)
+          setAir(null)
+          setZoneWeather(null)
+          setZoneAir(null)
           setLastUpdated(null)
           setStatus('offline')
         }
@@ -186,5 +261,5 @@ export function useLahoreData() {
 
   const retry = () => setAttempt(n => n + 1)
 
-  return { weather, air, error, status, lastUpdated, retry }
+  return { weather, air, zoneWeather, zoneAir, error, status, lastUpdated, retry }
 }

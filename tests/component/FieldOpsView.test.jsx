@@ -19,7 +19,7 @@ const renderView = (risk = buildRisk(), props = {}) =>
   )
 
 const openFirstTask = () => {
-  const card = screen.getAllByText(/fill/i)[0].closest('.lux-card-glass')
+  const card = screen.getAllByText(/live model/i)[0].closest('.lux-card-glass')
   fireEvent.click(card)
   return card
 }
@@ -52,7 +52,7 @@ describe('FieldOpsView', () => {
     expect(screen.queryByText('08')).not.toBeInTheDocument() // completed task has no rank
 
     // click the first OPEN card (the done task's card is non-interactive)
-    const openCards = screen.getAllByText(/fill/i).map(el => el.closest('.lux-card-glass')).filter(c => c.style.opacity !== '0.45')
+    const openCards = screen.getAllByText(/live model/i).map(el => el.closest('.lux-card-glass')).filter(c => c && c.style.opacity !== '0.45')
     fireEvent.click(openCards[0])
     fireEvent.click(screen.getByText(/Mark serviced/i))
     expect(onComplete).toHaveBeenCalledWith(risk.taskQueue[1].id)

@@ -136,8 +136,8 @@ export default function CityMap({
               <div style={{ fontFamily: 'Inter, sans-serif', minWidth: 180 }}>
                 <strong>{z.name}</strong>
                 <div style={{ margin: '6px 0 2px', fontSize: 13 }}>Flood risk: <strong style={{ color: bandColor(zoneScores[z.id]?.score ?? 0) }}>{zoneScores[z.id]?.score ?? 0}/100</strong></div>
-                {hazard === 'air' && air && <div style={{ fontSize: 12, opacity: 0.75 }}>City-wide AQI: {air.aqi ?? '—'} (live, Open-Meteo)</div>}
-                {hazard === 'heat' && heat && <div style={{ fontSize: 12, opacity: 0.75 }}>City-wide heat score: {heat.score} (live)</div>}
+                {hazard === 'air' && air && <div style={{ fontSize: 12, opacity: 0.75 }}>AQI (zone model): {air.aqi ?? '—'} (live, Open-Meteo)</div>}
+                {hazard === 'heat' && heat && <div style={{ fontSize: 12, opacity: 0.75 }}>Heat score (zone model): {heat.score} (live)</div>}
                 <div style={{ fontSize: 12, opacity: 0.75 }}>Population {(z.population / 1000).toFixed(0)}k · Drain cap. {(z.drainageCapacity * 100).toFixed(0)}%</div>
               </div>
             </Popup>

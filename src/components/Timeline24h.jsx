@@ -8,37 +8,42 @@ const rainColor = mm => {
 const mmBarHeight = mm => Math.max(4, Math.min(80, (mm / 15) * 80))
 
 /**
- * 24-hour outlook visualizations for City Overview.
- * Bars colored by the calibrated rainfall bands (RAIN_BANDS in risk.js);
- * AQI sparkline is a pure 2px SVG line in the accent gold.
+ * Rain outlook visualizations for Citizen / City Overview.
+ * Bars colored by the calibrated rainfall bands (RAIN_BANDS in risk.js).
+ * `prob` (optional % per hour) tints bar opacity — a light-rain hour with 90%
+ * chance reads darker than the same mm at 20% chance.
+ * `compact` renders a denser 72h strip with a sparser hour label rhythm.
  */
-export function RainTimeline({ hours = [], times = [] }) {
+export function RainTimeline({ hours = [], times = [], prob = [], compact = false }) {
   if (!hours.length) {
-    return <p className="text-sm" style={{ color: 'var(--text-muted)' }}>loading live data…</p>
+    return <p className="text-sm" style={{ color: 'var(--text-muted)' }}>waiting for live data…</p>
   }
   return (
     <div>
       <div className="flex items-end gap-0.5" style={{ height: 80 }}>
-        {hours.map((mm, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center" style={{ gap: 2 }}>
-            <div
-              title={`${times[i]?.slice(11, 13) ?? ''}:00 — ${mm ?? 0} mm`}
-              style={{
-                width: '100%',
-                height: mmBarHeight(mm || 0),
-                background: rainColor(mm || 0),
-                borderRadius: '2px 2px 0 0',
-                opacity: 0.85,
-                transition: 'height .6s var(--transition-lux)',
-              }}
-            />
-          </div>
-        ))}
+        {hours.map((mm, i) => {
+          const p = prob[i]
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center" style={{ gap: 2 }}>
+              <div
+                title={`${times[i]?.slice(11, 16) ?? ''} — ${mm ?? 0} mm${p != null ? ` · ${p}% chance` : ''}`}
+                style={{
+                  width: '100%',
+                  height: mmBarHeight(mm || 0),
+                  background: rainColor(mm || 0),
+                  borderRadius: '2px 2px 0 0',
+                  opacity: p != null ? 0.35 + Math.min(0.65, (p / 100) * 0.65) : 0.85,
+                  transition: 'height .6s var(--transition-lux)',
+                }}
+              />
+            </div>
+          )
+        })}
       </div>
       <div className="flex gap-0.5 mt-1">
         {hours.map((_, i) => (
           <span key={i} className="flex-1 text-center text-[0.55rem]" style={{ color: 'var(--text-muted)' }}>
-            {i % 3 === 0 ? (times[i] ?? '').slice(11, 13) : ' '}
+            {compact ? (i % 12 === 0 ? (times[i] ?? '').slice(11, 13) : ' ') : (i % 3 === 0 ? (times[i] ?? '').slice(11, 13) : ' ')}
           </span>
         ))}
       </div>
@@ -48,7 +53,7 @@ export function RainTimeline({ hours = [], times = [] }) {
 
 export function AqiSparkline({ series = [], times = [] }) {
   if (!series.length) {
-    return <p className="text-sm" style={{ color: 'var(--text-muted)' }}>loading live data…</p>
+    return <p className="text-sm" style={{ color: 'var(--text-muted)' }}>waiting for live data…</p>
   }
   const W = 100
   const H = 40

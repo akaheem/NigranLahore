@@ -43,7 +43,7 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch, service
         <div>
           <p className="editorial-header-num text-xl">Field Ops — prototype dispatch queue</p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Decision-support queue for WASA/LWMC-style municipal teams · {openTasks.length} open tasks · priority re-ranks as the rain forecast updates · drain telemetry is simulated {DISPATCH_CITATION}
+            Decision-support queue for WASA/LWMC-style municipal teams · {openTasks.length} open tasks · rain urgency from the live Open-Meteo forecast · drain fill levels follow a time-driven refill model (D-1 fills in ~9 days, per the calibrated waste-load corridor) {DISPATCH_CITATION}
           </p>
         </div>
         <button type="button" className="btn-lux btn-lux-outline" onClick={onSwitch}><span>← Citizen view</span></button>
@@ -56,6 +56,9 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch, service
             const isDone = done[t.id]
             const isTop = t.id === topTask?.id
             const rank = isDone ? null : String(1 + openTasks.indexOf(t)).padStart(2, '0')
+            const refillNote = isDone && t.servicedAt
+              ? `serviced ${t.lastServiceHrs === 0 ? 'just now' : `${t.lastServiceHrs}h ago`} — refilling`
+              : null
             return (
               <div
                 key={t.id}
@@ -84,7 +87,7 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch, service
                         {t.name}
                       </p>
                       <p className="text-[0.72rem] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                        {t.zoneName} · fill {t.fillPct}% (simulated) · unserved {t.lastServiceHrs}h
+                        {t.zoneName} · fill {t.fillPct}% (live model){refillNote ?? ` · unserved ${t.lastServiceHrs}h`}
                       </p>
                     </div>
                   </div>

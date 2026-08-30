@@ -128,13 +128,22 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, s
         </p>
       </div>
 
-      {/* 24h outlook */}
+      {/* Outlook — 24h detail + 72h horizon, all live Open-Meteo */}
       <div className="lux-card-glass mb-6" style={{ padding: '1.1rem 1.3rem' }}>
-        <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Next 24 hours — rain</p>
+        <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Next 24 hours — rain (live forecast, Lahore center)</p>
         <div className="mt-3">
           <RainTimeline hours={risk.weather?.next24h ?? []} times={risk.weather?.next24hTime ?? []} />
         </div>
-        <p className="mt-4 font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Next 24 hours — air (US AQI)</p>
+        <p className="mt-4 font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Next 72 hours — rain chance per hour (live forecast)</p>
+        <div className="mt-3">
+          <RainTimeline
+            hours={risk.weather?.next72h ?? []}
+            times={risk.weather?.next72hTime ?? []}
+            prob={risk.weather?.next72hProb ?? []}
+            compact
+          />
+        </div>
+        <p className="mt-4 font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>Air (US AQI) — past 12h to next 12h</p>
         <div className="mt-3">
           <AqiSparkline series={risk.air?.series ?? []} times={risk.air?.times ?? []} />
         </div>

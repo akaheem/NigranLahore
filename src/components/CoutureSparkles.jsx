@@ -23,9 +23,7 @@ export default function CoutureSparkles({ theme }) {
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    const isDark = theme === 'dark';
-
-    // Particle system: Low density, 32 premium champagne gold sparkles
+    // Particle system: Low density, 32 cyan-on-theme sparkles
     const PARTICLE_COUNT = 32;
     const particles = [];
 
@@ -145,7 +143,7 @@ export default function CoutureSparkles({ theme }) {
     };
 
     // Animation Loop
-    const tick = (timestamp) => {
+    const tick = () => {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
 

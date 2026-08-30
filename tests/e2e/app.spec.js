@@ -17,12 +17,13 @@ test.describe('Nigran app', () => {
     expect(errors).toEqual([])
   })
 
-  test('theme toggle persists across reload', async ({ page }) => {
+  test('dark theme is fixed and persists across reload', async ({ page }) => {
+    // The hackathon edition ships dark-only: no toggle button, data-theme pinned
     await page.goto('/')
-    await page.getByRole('button', { name: /light/i, exact: true }).click({ force: true })
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await expect(page.getByRole('button', { name: /light/i })).toHaveCount(0)
     await page.reload()
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   })
 
   test('round-trips between the three views', async ({ page }) => {
@@ -68,19 +69,21 @@ test.describe('Nigran app', () => {
 
     // service the task — the "Serviced" stat appears and the id persists
     await serviceBtn.dispatchEvent('click')
-    await expect(page.getByText('Serviced')).toBeVisible({ timeout: 15000 })
-    const doneState = await page.evaluate(() => JSON.parse(localStorage.getItem('nigran-done') || '{}'))
-    expect(Object.values(doneState)).toContain(true)
+    await expect(page.getByText('Serviced', { exact: true })).toBeVisible({ timeout: 15000 })
+    const doneState = await page.evaluate(() => JSON.parse(localStorage.getItem('nigran-done-at') || '{}'))
+    expect(Object.keys(doneState).length).toBeGreaterThan(0)
   })
 
-  test('offline: falls back to snapshot and still renders scores', async ({ page }) => {
+  test('offline: withholds live values honestly, static scores still render', async ({ page }) => {
     await page.route('**://api.open-meteo.com/**', route => route.abort())
     await page.route('**://air-quality-api.open-meteo.com/**', route => route.abort())
     await page.goto('/')
 
     // the header pill is the canonical offline signal
-    await expect(page.getByText('Snapshot mode').first()).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('Snapshot mode')).toBeVisible({ timeout: 15000 })
     await expect(page.getByText(/Your area/i)).toBeVisible()
+    // live weather/air are withheld ('—'), never invented
+    await expect(page.getByText(/Rain next 6h — Shahdara/).locator('..')).toContainText('—')
     // flood score still renders from the telemetry-only renormalization
     await expect(page.locator('.font-editorial.text-6xl').first()).not.toHaveText('—')
   })

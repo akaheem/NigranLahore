@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import CityMap from './CityMap.jsx'
 import RiskCard from './RiskCard.jsx'
+import { RainTimeline } from './Timeline24h.jsx'
 import { ZONES } from '../data/lahore.js'
 import { RECORDS, TELEMETRY_NOTE } from '../data/calibration.js'
 import { bandColor, airWhy, heatWhy } from '../lib/risk.js'
@@ -69,32 +70,34 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
 
   return (
     <div className="editorial-container py-10">
-      {/* Live city strip */}
+      {/* Live zone strip — the selected zone's OWN Open-Meteo feed */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="lux-card-glass py-4" style={{ padding: '1rem 1.25rem' }}>
-          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Rain next 6h</p>
+          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Rain next 6h — {selectedZone.name}</p>
           <p className="font-editorial text-3xl mt-1">{risk.rain6hMm != null ? `${risk.rain6hMm.toFixed(1)}` : '—'}<span className="text-sm"> mm</span></p>
         </div>
         <div className="lux-card-glass" style={{ padding: '1rem 1.25rem' }}>
-          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Air (US AQI)</p>
+          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Air (US AQI) — {selectedZone.name}</p>
           <p className="font-editorial text-3xl mt-1" style={{ color: band.c }}>
             {risk.air?.aqi ?? '—'}
             <span className="text-xs ml-2 font-accent" style={{ color: band.c }}>{band.l}</span>
           </p>
         </div>
         <div className="lux-card-glass" style={{ padding: '1rem 1.25rem' }}>
-          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Temperature</p>
+          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Temperature — {selectedZone.name}</p>
           <p className="font-editorial text-3xl mt-1">{risk.weather?.tempC != null ? `${Math.round(risk.weather.tempC)}°C` : '—'}</p>
         </div>
         <div className="lux-card-glass" style={{ padding: '1rem 1.25rem' }}>
-          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Humidity</p>
+          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Humidity — {selectedZone.name}</p>
           <p className="font-editorial text-3xl mt-1">{risk.weather?.humidityPct != null ? `${risk.weather.humidityPct}%` : '—'}</p>
         </div>
       </div>
 
       {showFallbackNote && (
         <p className="mb-6 font-accent text-[0.65rem] uppercase tracking-[0.15em]" style={{ color: 'var(--risk-moderate)' }}>
-          {risk.status === 'offline' ? 'Snapshot mode — showing static snapshot data' : 'Showing cached data — live feed unavailable'}
+          {risk.status === 'offline'
+            ? 'Live feed unreachable — values withheld rather than guessed. Hit Retry or check your connection.'
+            : 'Showing cached data — live feed temporarily unavailable'}
         </p>
       )}
 
@@ -174,22 +177,34 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
             </div>
           </div>
 
-          {/* 6h rain timeline */}
+          {/* 6h rain timeline + 72h chance strip — the zone's own forecast */}
           <div className="lux-card-glass">
-            <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>Rain — next 6 hours</p>
+            <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>Rain — next 6 hours ({selectedZone.name})</p>
             <div className="mt-3 flex items-end gap-2" style={{ height: 80 }}>
               {(risk.weather?.next6h ?? []).map((mm, i) => {
+                const prob = risk.weather?.next6hProb?.[i]
                 const h = Math.max(4, Math.min(80, (mm / 5) * 80))
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div style={{ width: '100%', height: h, background: mm > 2 ? 'var(--risk-high)' : mm > 0.3 ? 'var(--risk-moderate)' : 'var(--risk-safe)', borderRadius: 3, opacity: 0.85, transition: 'height .6s var(--transition-lux)' }} />
+                    <div
+                      title={`${(risk.weather?.hourlyTime?.[i] ?? '').slice(11, 16)} — ${mm} mm${prob != null ? ` · ${prob}% chance` : ''}`}
+                      style={{ width: '100%', height: h, background: mm > 2 ? 'var(--risk-high)' : mm > 0.3 ? 'var(--risk-moderate)' : 'var(--risk-safe)', borderRadius: 3, opacity: prob != null ? 0.4 + Math.min(0.6, (prob / 100) * 0.6) : 0.85, transition: 'height .6s var(--transition-lux)' }} />
                     <span className="text-[0.6rem]" style={{ color: 'var(--text-muted)' }}>{(risk.weather?.hourlyTime?.[i] ?? '').slice(11, 13)}</span>
                   </div>
                 )
               })}
               {(risk.weather?.next6h ?? []).length === 0 && (
-                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>loading live data…</span>
+                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>waiting for live data…</span>
               )}
+            </div>
+            <p className="mt-4 font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>Rain chance — next 72 hours</p>
+            <div className="mt-3">
+              <RainTimeline
+                hours={risk.weather?.next72h ?? []}
+                times={risk.weather?.next72hTime ?? []}
+                prob={risk.weather?.next72hProb ?? []}
+                compact
+              />
             </div>
           </div>
         </div>
@@ -206,21 +221,21 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
         />
       </div>
 
-      {/* Multi-hazard — air + heat */}
+      {/* Multi-hazard — air + heat (the selected zone's own live feed) */}
       <div className="mt-6 grid md:grid-cols-2 gap-4">
         <RiskCard
           num="III"
-          title="Air quality — Lahore center"
+          title={`Air quality — ${selectedZone.name}`}
           score={risk.air?.score ?? 0}
           whys={airWhy(risk.air ?? {})}
-          footer="US AQI from Open-Meteo's air-quality model; readings represent the city center, not street level."
+          footer="US AQI from Open-Meteo's air-quality model for this zone's coordinates — not a city average."
         />
         <RiskCard
           num="IV"
-          title="Heat stress"
+          title={`Heat stress — ${selectedZone.name}`}
           score={risk.heat?.score ?? 0}
           whys={heatWhy(risk.heat ?? {}, risk.weather ?? {})}
-          footer="Humid-heat banding; heatwave advisories trigger above 40°C in the Lahore plan."
+          footer="Live temperature + humidity from Open-Meteo; humid-heat banding; heatwave advisories trigger above 40°C in the Lahore plan."
         />
       </div>
 

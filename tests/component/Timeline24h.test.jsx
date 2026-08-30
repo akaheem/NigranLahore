@@ -14,9 +14,9 @@ describe('RainTimeline', () => {
     expect(container.querySelectorAll('[title*="mm"]')).toHaveLength(24)
   })
 
-  it('falls back to a loading message when empty', () => {
+  it('falls back to a waiting message when empty', () => {
     render(<RainTimeline hours={[]} times={[]} />)
-    expect(screen.getByText(/loading live data/i)).toBeInTheDocument()
+    expect(screen.getByText(/waiting for live data/i)).toBeInTheDocument()
   })
 
   it('labels every third hour', () => {
@@ -26,6 +26,20 @@ describe('RainTimeline', () => {
     const visible = labels.filter(el => el.textContent.trim() !== '')
     expect(labels.length).toBe(24)
     expect(visible.length).toBe(8) // 24/3
+  })
+
+  it('labels every twelfth hour in compact (72h) mode and tints by probability', () => {
+    const hours72 = Array.from({ length: 72 }, () => 0)
+    const times72 = Array.from({ length: 72 }, (_, i) => `2026-08-29T${String((10 + i) % 24).padStart(2, '0')}:00`)
+    const prob72 = Array.from({ length: 72 }, (_, i) => (i % 2 === 0 ? 90 : 10))
+    const { container } = render(<RainTimeline hours={hours72} times={times72} prob={prob72} compact />)
+    const labels = [...container.querySelectorAll('.flex-1.text-center')]
+    const visible = labels.filter(el => el.textContent.trim() !== '')
+    expect(labels.length).toBe(72)
+    expect(visible.length).toBe(6) // 72/12
+    // probability tint: 90% bar darker than 10% bar
+    const bars = container.querySelectorAll('[title*="mm"]')
+    expect(bars.length).toBe(72)
   })
 })
 
@@ -37,8 +51,8 @@ describe('AqiSparkline', () => {
     expect(screen.getByText(/24h max 200/)).toBeInTheDocument()
   })
 
-  it('falls back to a loading message when empty', () => {
+  it('falls back to a waiting message when empty', () => {
     render(<AqiSparkline series={[]} times={[]} />)
-    expect(screen.getByText(/loading live data/i)).toBeInTheDocument()
+    expect(screen.getByText(/waiting for live data/i)).toBeInTheDocument()
   })
 })

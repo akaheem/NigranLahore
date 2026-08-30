@@ -31,13 +31,13 @@ describe('CitizenView', () => {
 
   it('shows an em-dash when rain data is missing', () => {
     renderView(buildRisk({ rain6hMm: null, weather: { ...buildRisk().weather, next6h: [] } }))
-    const rainCard = screen.getByText('Rain next 6h').closest('.lux-card-glass')
+    const rainCard = screen.getByText(/Rain next 6h — Shahdara/).closest('.lux-card-glass')
     expect(rainCard.textContent).toContain('—')
   })
 
-  it('shows the snapshot note when offline', () => {
+  it('withholds values honestly when offline (no invented numbers)', () => {
     renderView(buildRisk({ status: 'offline' }))
-    expect(screen.getByText(/snapshot mode/i)).toBeInTheDocument()
+    expect(screen.getByText(/Live feed unreachable — values withheld/i)).toBeInTheDocument()
   })
 
   it('selects a zone via the dropdown', () => {

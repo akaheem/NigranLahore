@@ -18,19 +18,19 @@ const NAV = [
 ]
 
 function App() {
-  const [theme, setTheme] = useLocalStorageState('nigran-theme', 'dark')
   const [view, setView] = useLocalStorageState('nigran-view', 'citizen')
   const [zoneId, setZoneId] = useLocalStorageState('nigran-zone', 'shahdara')
   const [showCool, setShowCool] = useLocalStorageState('nigran-cool', true)
   const [done, setDone] = useLocalStorageState('nigran-done', {})
+  const [doneAt, setDoneAt] = useLocalStorageState('nigran-done-at', {})
   const [scrolled, setScrolled] = useState(false)
 
-  const risk = useCityRisk(done)
+  const risk = useCityRisk(done, doneAt, zoneId)
   const selectedZone = ZONES.find(z => z.id === zoneId) ?? ZONES[0]
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-  }, [theme])
+    document.documentElement.setAttribute('data-theme', 'dark')
+  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -38,16 +38,18 @@ function App() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const onComplete = (id) => setDone(d => ({ ...d, [id]: true }))
+  const onComplete = (id) => {
+    const at = Date.now()
+    setDone(d => ({ ...d, [id]: true }))
+    setDoneAt(a => ({ ...a, [id]: at }))
+  }
   const doneIds = useMemo(() => Object.keys(done).filter(k => done[k]), [done])
   const onOpenZone = (id) => {
     setZoneId(id)
     setView('citizen')
   }
 
-  const etherColors = theme === 'dark'
-    ? ['#04A8E1', '#60C2EB', '#0B2A3C']
-    : ['#04A8E1', '#9BDCF5', '#F5FBFE']
+  const etherColors = ['#04A8E1', '#60C2EB', '#0B2A3C']
 
   return (
     <div className="min-h-screen relative overflow-x-hidden">
@@ -61,7 +63,7 @@ function App() {
       <div
         className="fixed inset-0 -z-10 pointer-events-none"
         aria-hidden="true"
-        style={{ opacity: theme === 'dark' ? 0.5 : 0.32 }}
+        style={{ opacity: 0.5 }}
       >
         <LiquidEther
           colors={etherColors}
@@ -80,9 +82,9 @@ function App() {
         />
       </div>
 
-      {/* 3. Mouse-parallax champagne sparkles */}
+      {/* 3. Mouse-parallax cyan sparkles */}
       <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
-        <CoutureSparkles theme={theme} />
+        <CoutureSparkles theme="dark" />
       </div>
 
       {/* 4. Ambient colored light blobs */}
@@ -133,15 +135,6 @@ function App() {
                 </button>
               ))}
             </nav>
-            <button
-              type="button"
-              className="btn-lux btn-lux-outline"
-              style={{ padding: '0.35rem 0.9rem', fontSize: '0.65rem' }}
-              onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}
-              
-            >
-              <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
-            </button>
           </div>
         </div>
       </header>

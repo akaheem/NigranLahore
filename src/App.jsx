@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Galaxy from './Galaxy.jsx'
 import LiquidEther from './components/LiquidEther.jsx'
@@ -25,7 +25,7 @@ function App() {
   const [done, setDone] = useLocalStorageState('nigran-done', {})
   const [scrolled, setScrolled] = useState(false)
 
-  const risk = useCityRisk()
+  const risk = useCityRisk(done)
   const selectedZone = ZONES.find(z => z.id === zoneId) ?? ZONES[0]
 
   useEffect(() => {
@@ -39,14 +39,15 @@ function App() {
   }, [])
 
   const onComplete = (id) => setDone(d => ({ ...d, [id]: true }))
+  const doneIds = useMemo(() => Object.keys(done).filter(k => done[k]), [done])
   const onOpenZone = (id) => {
     setZoneId(id)
     setView('citizen')
   }
 
   const etherColors = theme === 'dark'
-    ? ['#D4B06A', '#B58BE6', '#4D2F63']
-    : ['#D4B06A', '#DFC7A5', '#FAF8F5']
+    ? ['#04A8E1', '#60C2EB', '#0B2A3C']
+    : ['#04A8E1', '#9BDCF5', '#F5FBFE']
 
   return (
     <div className="min-h-screen relative overflow-x-hidden">
@@ -90,13 +91,13 @@ function App() {
           animate={{ x: [0, 80, -40, 0], y: [0, -60, 50, 0], scale: [1, 1.2, 0.9, 1] }}
           transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
           className="ambient-blob"
-          style={{ top: '12%', left: '18%', width: 350, height: 350, background: 'rgba(77, 47, 99, 0.30)' }}
+          style={{ top: '12%', left: '18%', width: 350, height: 350, background: 'rgba(4, 168, 225, 0.22)' }}
         />
         <motion.div
           animate={{ x: [0, -70, 60, 0], y: [0, 80, -40, 0], scale: [1, 0.9, 1.15, 1] }}
           transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
           className="ambient-blob"
-          style={{ top: '30%', right: '14%', width: 400, height: 400, background: 'rgba(181, 139, 230, 0.20)' }}
+          style={{ top: '30%', right: '14%', width: 400, height: 400, background: 'rgba(96, 194, 235, 0.16)' }}
         />
       </div>
 
@@ -161,6 +162,7 @@ function App() {
                 showCool={showCool}
                 onToggleCool={() => setShowCool(s => !s)}
                 onSwitch={() => setView('ops')}
+                servicedIds={doneIds}
               />
             )}
             {view === 'ops' && (
@@ -169,6 +171,9 @@ function App() {
                 done={done}
                 onComplete={onComplete}
                 onSwitch={() => setView('citizen')}
+                servicedIds={doneIds}
+                selectedZone={selectedZone}
+                onSelectZone={(z) => setZoneId(z.id)}
               />
             )}
             {view === 'overview' && (
@@ -177,6 +182,9 @@ function App() {
                 done={done}
                 onOpenZone={onOpenZone}
                 onNavigate={setView}
+                servicedIds={doneIds}
+                selectedZone={selectedZone}
+                onSelectZone={(z) => setZoneId(z.id)}
               />
             )}
           </motion.div>
@@ -187,7 +195,6 @@ function App() {
         Nigran — hyperlocal decision intelligence for Lahore · Seadline Hackathon 2026
       </footer>
 
-      <div className="noise-overlay" aria-hidden="true" />
       <div className="vignette" aria-hidden="true" />
     </div>
   )

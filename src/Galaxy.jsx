@@ -97,14 +97,14 @@ vec3 StarLayer(vec2 uv) {
 
       vec3 base;
       if (seed < 0.65) {
-        // Luxury Champagne Gold (#D4AF37)
-        base = vec3(0.88, 0.73, 0.32);
+        // Signal Cyan (#04A8E1)
+        base = vec3(0.016, 0.659, 0.882);
       } else if (seed < 0.90) {
-        // Pearl / Warm White
-        base = vec3(0.98, 0.96, 0.92);
+        // Ice White
+        base = vec3(0.92, 0.97, 0.99);
       } else {
-        // Gentle Rose Gold
-        base = vec3(0.83, 0.60, 0.64);
+        // Sky Blue accent
+        base = vec3(0.38, 0.76, 0.92);
       }
       
       // Control saturation dynamically through the uniform

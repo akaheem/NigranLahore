@@ -4,7 +4,7 @@ import { DISPATCH_CITATION, SORE_POINT_FACT } from '../data/calibration.js'
 import { bandColor } from '../lib/risk.js'
 import { CheckCircle2, AlertTriangle, Clock } from 'lucide-react'
 
-export default function FieldOpsView({ risk, done, onComplete, onSwitch }) {
+export default function FieldOpsView({ risk, done, onComplete, onSwitch, servicedIds = [], selectedZone, onSelectZone, onSelectDrain }) {
   const [selectedTask, setSelectedTask] = useState(null)
 
   const queue = risk.taskQueue
@@ -14,6 +14,7 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch }) {
   const complete = (id) => {
     onComplete(id)
     setSelectedTask(null)
+    if (onSelectDrain) onSelectDrain(null)
   }
 
   const navigate = (t) => {
@@ -118,7 +119,16 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch }) {
         {/* Map + stats */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="lux-card-glass" style={{ padding: '1rem', minHeight: 380 }}>
-            <CityMap zoneScores={risk.zoneScores} showDrains showCool={false} />
+            <CityMap
+              zoneScores={risk.zoneScores}
+              showDrains
+              showCool={false}
+              selectedZone={selectedZone}
+              onSelectZone={onSelectZone}
+              servicedIds={servicedIds}
+              selectedDrainId={selectedTask}
+              onSelectDrain={(id) => setSelectedTask(cur => (cur === id ? null : id))}
+            />
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="lux-card-glass" style={{ padding: '1rem' }}>

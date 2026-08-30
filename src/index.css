@@ -4,40 +4,46 @@
 
 /* ============================================================
    Nigran — Design System
-   Ported from the Vogue Vista luxury editorial system:
-   glassmorphism, film grain, premium shadows, Cormorant/Inter/Outfit.
+   Hackathon cyan edition: deep ocean navy + signal cyan (#00A7E1),
+   glassmorphism, premium shadows, Cormorant/Inter/Outfit.
    ============================================================ */
 
 :root {
-  /* Light — linen/charcoal/muted gold */
-  --bg-primary: #EAE6DD;
-  --bg-secondary: #EFE8DC;
-  --bg-tertiary: #EAE6DD;
-  --text-primary: #262522;
-  --text-secondary: #6B675F;
-  --text-muted: #A8957C;
-  --accent-gold: #A8957C;
-  --color-gold: #C6A16A;
-  --accent-gold-dark: #8E7D66;
-  --accent-gold-light: #DDD4C6;
-  --border-light: rgba(38, 37, 34, 0.07);
-  --border-medium: #DDD4C6;
-  --shadow-premium: 0 20px 60px rgba(38, 37, 34, 0.06);
-  --shadow-premium-hover: 0 30px 80px rgba(38, 37, 34, 0.10);
-  --glass-bg: rgba(255, 255, 255, 0.82);
-  --glass-border: rgba(168, 149, 124, 0.18);
+  /* Light — glacier white / deep sea ink / signal cyan */
+  --bg-primary: #F5FBFE;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #EAF6FC;
+  --text-primary: #0B2E3F;
+  --text-secondary: #3E6478;
+  --text-muted: #5C8CA3;
+  --accent-gold: #00A7E1;
+  --accent-gold-dark: #0088B8;
+  --accent-gold-light: #BBE5F7;
+  --color-gold: #00A7E1;
+  --border-light: rgba(11, 46, 63, 0.08);
+  --border-medium: rgba(0, 167, 225, 0.35);
+  --shadow-premium: 0 20px 60px rgba(11, 46, 63, 0.08);
+  --shadow-premium-hover: 0 30px 80px rgba(11, 46, 63, 0.12);
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(0, 167, 225, 0.22);
   --glass-blur: 18px;
-  --glow-color: rgba(168, 149, 124, 0.06);
-  --cta-bg: #2E2D2A;
-  --cta-text: #F8F6F1;
+  --glow-color: rgba(0, 167, 225, 0.08);
+  --cta-bg: #0B2E3F;
+  --cta-text: #FFFFFF;
 
   /* Status hues — defined in BOTH themes (dark-only tokens in the source caused
      guaranteed-invalid values in light mode; audit fix). */
-  --risk-safe: #7D9575;
-  --risk-moderate: #C9A66B;
-  --risk-high: #C07A50;
-  --risk-severe: #B05C5C;
-  --risk-info: #8A93B8;
+  --risk-safe: #0E9F8A;
+  --risk-moderate: #D97706;
+  --risk-high: #EA580C;
+  --risk-severe: #DC2626;
+  --risk-info: #0284C7;
+
+  /* Legacy accent names kept alive so nothing references dead hues. */
+  --accent-plum: #0E3A52;
+  --accent-lavender: #38BDF8;
+  --accent-rosegold: #FB923C;
+  --accent-sage: #2DD4BF;
 
   --font-editorial: 'Cormorant Garamond', Georgia, serif;
   --font-ui: 'Inter', system-ui, sans-serif;
@@ -47,37 +53,37 @@
 }
 
 [data-theme='dark'], .dark {
-  /* Dark — plum charcoal/gold */
-  --bg-primary: #1B171F;
-  --bg-secondary: #1A1716;
-  --bg-tertiary: #24201E;
-  --text-primary: #F7F3EE;
-  --text-secondary: #D7CEC4;
-  --text-muted: #B7AA9A;
-  --accent-gold: #C9A66B;
-  --color-gold: #C9A66B;
-  --accent-gold-dark: #B38E59;
-  --accent-gold-light: #DFC7A5;
-  --accent-plum: #4D2F63;
-  --accent-lavender: #B58BE6;
-  --accent-rosegold: #D89D90;
-  --accent-sage: #7D9575;
-  --border-light: rgba(255, 255, 255, 0.06);
-  --border-medium: rgba(255, 255, 255, 0.15);
-  --shadow-premium: 0 25px 60px rgba(0, 0, 0, 0.55), inset 0 1px rgba(255, 255, 255, 0.08), inset 0 0 20px rgba(201, 166, 107, 0.03);
-  --shadow-premium-hover: 0 35px 80px rgba(0, 0, 0, 0.65), inset 0 1px rgba(255, 255, 255, 0.12), inset 0 0 25px rgba(201, 166, 107, 0.05);
-  --glass-bg: rgba(35, 30, 28, 0.72);
-  --glass-border: rgba(201, 166, 107, 0.15);
+  /* Dark — deep ocean navy / signal cyan */
+  --bg-primary: #06121D;
+  --bg-secondary: #0A1B2A;
+  --bg-tertiary: #0E2436;
+  --text-primary: #EAF6FC;
+  --text-secondary: #A8C9DA;
+  --text-muted: #6E93A8;
+  --accent-gold: #00A7E1;
+  --accent-gold-dark: #33BBEA; /* hover layer: lighter cyan reads better on dark */
+  --accent-gold-light: #BBE5F7;
+  --color-gold: #00A7E1;
+  --accent-plum: #0E3A52;
+  --accent-lavender: #38BDF8;
+  --accent-rosegold: #FB923C;
+  --accent-sage: #2DD4BF;
+  --border-light: rgba(255, 255, 255, 0.07);
+  --border-medium: rgba(0, 167, 225, 0.4);
+  --shadow-premium: 0 25px 60px rgba(0, 0, 0, 0.55), inset 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-premium-hover: 0 35px 80px rgba(0, 0, 0, 0.65);
+  --glass-bg: rgba(10, 27, 42, 0.72);
+  --glass-border: rgba(0, 167, 225, 0.25);
   --glass-blur: 20px;
-  --glow-color: rgba(201, 166, 107, 0.04);
-  --cta-bg: #F7F3EE;
-  --cta-text: #211C24;
+  --glow-color: rgba(0, 167, 225, 0.10);
+  --cta-bg: #00A7E1;
+  --cta-text: #04141F;
 
-  --risk-safe: #7D9575;
-  --risk-moderate: #C9A66B;
-  --risk-high: #D08B57;
-  --risk-severe: #D87C6E;
-  --risk-info: #B58BE6;
+  --risk-safe: #2DD4BF;
+  --risk-moderate: #FBBF24;
+  --risk-high: #FB923C;
+  --risk-severe: #F87171;
+  --risk-info: #38BDF8;
 }
 
 /* Global base */
@@ -89,12 +95,20 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Subtle cyan radial glow at the top of the page — a quiet depth cue,
+   no noise, no dots. */
 html, body {
   background-color: var(--bg-primary);
+  background-image: radial-gradient(60% 38% at 50% 0%, rgba(0, 167, 225, 0.05), transparent 60%);
+  background-repeat: no-repeat;
   color: var(--text-primary);
   font-family: var(--font-ui);
   overflow-x: hidden;
   transition: background-color 0.5s var(--transition-lux), color 0.5s var(--transition-lux), border-color 0.5s var(--transition-lux);
+}
+
+[data-theme='dark'] body, .dark body {
+  background-image: radial-gradient(60% 38% at 50% 0%, rgba(0, 167, 225, 0.07), transparent 60%);
 }
 
 /* Dashboard headings stay Inter (dense data UI) — editorial serif reserved for
@@ -109,52 +123,25 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 400;
 }
 
-/* ===== Film grain (from the sample: 200% layer with animated grain steps) ===== */
-.noise-overlay {
-  position: fixed;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: transparent url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E') repeat;
-  opacity: 0.035;
-  pointer-events: none;
-  z-index: 9999;
-  animation: grain 12s steps(8) infinite;
-}
-
-@keyframes grain {
-  0%, 100% { transform:translate(0, 0); }
-  10% { transform:translate(-5%, -10%); }
-  20% { transform:translate(-15%, 5%); }
-  30% { transform:translate(7%, -25%); }
-  40% { transform:translate(-5%, 25%); }
-  50% { transform:translate(-15%, 10%); }
-  60% { transform:translate(15%, 0%); }
-  70% { transform:translate(0%, 15%); }
-  80% { transform:translate(3%, 35%); }
-  90% { transform:translate(-10%, 10%); }
-}
-
 /* The top-of-app decorative layers must never intercept clicks — the scan
-   line / grain / vignette sit above cards visually but not interactively. */
+   line / vignette sit above cards visually but not interactively. */
 .scan-line, .vignette { pointer-events: none; }
 
-/* ===== Vignette (sample-faithful: center-transparent radial) ===== */
+/* ===== Vignette — faint depth cue, not a haze ===== */
 .vignette {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at center, transparent 30%, rgba(26, 24, 22, 0.04) 100%);
+  background: radial-gradient(circle at center, transparent 55%, rgba(11, 46, 63, 0.06) 100%);
   pointer-events: none;
   z-index: 900;
   transition: background 0.5s var(--transition-lux);
 }
 
 [data-theme='dark'] .vignette, .dark .vignette {
-  background: radial-gradient(circle at center, transparent 20%, rgba(22, 20, 28, 0.65) 100%) !important;
+  background: radial-gradient(circle at center, transparent 55%, rgba(2, 10, 18, 0.35) 100%) !important;
 }
 
 /* ===== Glass primitives ===== */
@@ -230,57 +217,60 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-lux-outline {
   background: transparent;
-  color: var(--text-primary);
+  color: var(--accent-gold);
   border: 1px solid var(--accent-gold);
 }
 
-.btn-lux-outline:hover { color: var(--accent-gold-dark); }
+.btn-lux-outline:hover {
+  background: var(--accent-gold);
+  color: #FFFFFF;
+}
 
 [data-theme='dark'] .btn-lux-outline, .dark .btn-lux-outline {
   background-color: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--accent-gold);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 10px 30px rgba(0, 0, 0, 0.25);
-  color: var(--text-primary);
+  color: var(--accent-gold);
   transition: all 0.4s var(--transition-lux);
 }
 
 [data-theme='dark'] .btn-lux-outline:hover, .dark .btn-lux-outline:hover {
-  background-color: rgba(255, 255, 255, 0.18);
-  border-color: var(--accent-gold);
-  box-shadow: 0 15px 35px rgba(212, 176, 106, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  color: var(--bg-primary);
+  background-color: var(--accent-gold);
+  border-color: var(--accent-gold-dark);
+  box-shadow: 0 15px 35px rgba(0, 167, 225, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
 }
 
-/* ===== Sample-faithful glass navbar (full-width, blur 24, luminous cream / plum) ===== */
+/* ===== Glass navbar (full-width, blur 24, luminous glacier / deep navy) ===== */
 .navbar-glass {
-  background: rgba(250, 247, 242, 0.75) !important;
+  background: rgba(245, 251, 254, 0.8) !important;
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
-  border-bottom: 1px solid rgba(210, 200, 185, 0.35) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), inset 0 1px rgba(255, 255, 255, 0.45) !important;
+  border-bottom: 1px solid rgba(0, 167, 225, 0.25) !important;
+  box-shadow: 0 8px 32px rgba(11, 46, 63, 0.06), inset 0 1px rgba(255, 255, 255, 0.6) !important;
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .navbar-glass.scrolled {
-  background: rgba(250, 247, 242, 0.88) !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1) !important;
+  background: rgba(245, 251, 254, 0.9) !important;
+  box-shadow: 0 12px 40px rgba(11, 46, 63, 0.1) !important;
 }
 
 [data-theme='dark'] .navbar-glass, .dark .navbar-glass {
-  background: rgba(22, 16, 28, 0.75) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(6, 18, 29, 0.82) !important;
+  border: 1px solid rgba(0, 167, 225, 0.28) !important;
   border-top: none !important;
   border-left: none !important;
   border-right: none !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px rgba(255, 255, 255, 0.1) !important;
   border-radius: 0 !important;
 }
 
 [data-theme='dark'] .navbar-glass.scrolled, .dark .navbar-glass.scrolled {
-  background: rgba(22, 16, 28, 0.88) !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35) !important;
+  background: rgba(6, 18, 29, 0.92) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
 }
 
 .glass-chip {
@@ -291,13 +281,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-theme='dark'] .glass-chip, .dark .glass-chip {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 167, 225, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Ambient colored light blobs (sample Hero language, reused behind views) */
+/* Ambient colored light blobs (reused behind views) */
 .ambient-blob {
   position: absolute;
   border-radius: 50%;
@@ -322,7 +312,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* ===== Scan / status effects (from source — the signature dashboard language) ===== */
+/* ===== Scan / status effects (the signature dashboard language) ===== */
 .scan-line {
   position: absolute;
   left: 0;
@@ -338,6 +328,18 @@ h1, h2, h3, h4, h5, h6 {
   10% { opacity: 0.7; }
   50% { top: calc(100% - 3px); opacity: 0.7; }
   90% { opacity: 0; }
+}
+
+/* Selected-zone ring on the Leaflet map — soft pulse draws the eye to the
+   active area without blocking interaction with anything under it. */
+.zone-ring {
+  animation: ring-pulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes ring-pulse {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 0.35; }
 }
 
 .radar-sweep {
@@ -395,7 +397,7 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-gold); }
 html { scrollbar-width: thin; scrollbar-color: var(--bg-tertiary) var(--bg-primary); }
 
-/* ===== Leaflet luxury restyle ===== */
+/* ===== Leaflet restyle — OSM tiles tuned to sit naturally in the navy theme ===== */
 .leaflet-container {
   background: var(--bg-tertiary);
   font-family: var(--font-ui);
@@ -404,7 +406,7 @@ html { scrollbar-width: thin; scrollbar-color: var(--bg-tertiary) var(--bg-prima
 .leaflet-tile-pane { filter: saturate(0.55) contrast(0.92) brightness(0.94); }
 
 [data-theme='dark'] .leaflet-tile-pane, .dark .leaflet-tile-pane {
-  filter: saturate(0.4) contrast(1.02) brightness(0.62) hue-rotate(-8deg);
+  filter: saturate(0.5) contrast(1.05) brightness(0.55) hue-rotate(175deg);
 }
 
 .leaflet-popup-content-wrapper {

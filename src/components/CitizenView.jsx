@@ -21,7 +21,7 @@ function haversineKm(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h))
 }
 
-export default function CitizenView({ risk, selectedZone, onSelectZone, showCool, onToggleCool, onSwitch }) {
+export default function CitizenView({ risk, selectedZone, onSelectZone, showCool, onToggleCool, onSwitch, servicedIds = [] }) {
   const [locateMsg, setLocateMsg] = useState(null)
 
   const zoneScore = risk.zoneScores[selectedZone.id]?.score ?? 0
@@ -118,6 +118,7 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
               selectedZone={selectedZone}
               onSelectZone={onSelectZone}
               showCool={showCool}
+              servicedIds={servicedIds}
             />
           </div>
           <p className="mt-2 text-[0.68rem]" style={{ color: 'var(--text-muted)' }}>

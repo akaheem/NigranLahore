@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-const defaultColors = ['#C6A16A', '#E7DCCF', '#F2E8DA'];
+const defaultColors = ['#04A8E1', '#60C2EB', '#9BDCF5'];
 
 export default function LiquidEther({
   mouseForce = 20,

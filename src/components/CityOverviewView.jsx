@@ -17,7 +17,7 @@ const hazards = [
  * city impact counters, 24h rain/AQI outlook, and a zone drill-down table
  * that jumps into the Citizen view.
  */
-export default function CityOverviewView({ risk, done, onOpenZone, onNavigate }) {
+export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, servicedIds = [], selectedZone, onSelectZone }) {
   const [hazard, setHazard] = useState('flood')
   const [showCool, setShowCool] = useState(true)
   const [showDrains, setShowDrains] = useState(true)
@@ -118,6 +118,9 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate })
             heat={risk.heat}
             showDrains={showDrains}
             showCool={showCool}
+            servicedIds={servicedIds}
+            selectedZone={selectedZone}
+            onSelectZone={onSelectZone}
           />
         </div>
         <p className="mt-2 text-[0.68rem]" style={{ color: 'var(--text-muted)' }}>
@@ -145,9 +148,30 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate })
           {ZONES.map(z => {
             const score = risk.zoneScores[z.id]?.score ?? 0
             const drains = DRAIN_NODES.filter(n => n.zone === z.id).length
+            const isActive = selectedZone?.id === z.id
             return (
-              <div key={z.id} className="flex items-center justify-between gap-3 flex-wrap" style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '0.6rem' }}>
-                <span className="font-accent text-sm uppercase tracking-[0.1em]" style={{ minWidth: 120 }}>{z.name}</span>
+              <div
+                key={z.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelectZone?.(z)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onSelectZone?.(z) }}
+                className="flex items-center justify-between gap-3 flex-wrap"
+                style={{
+                  borderBottom: '1px solid var(--border-light)',
+                  paddingBottom: '0.6rem',
+                  cursor: 'pointer',
+                  borderRadius: 8,
+                  padding: '0.45rem 0.6rem',
+                  marginInline: '-0.6rem',
+                  transition: 'background .3s var(--transition-lux)',
+                  background: isActive ? 'var(--glow-color)' : 'transparent',
+                  outline: isActive ? '1px solid var(--accent-gold)' : 'none',
+                }}
+              >
+                <span className="font-accent text-sm uppercase tracking-[0.1em]" style={{ minWidth: 120, color: isActive ? 'var(--accent-gold)' : undefined }}>
+                  {isActive ? '▸ ' : ''}{z.name}
+                </span>
                 <span className="font-editorial text-2xl" style={{ color: bandColor(score) }}>{score}</span>
                 <span className="text-[0.72rem]" style={{ color: 'var(--text-muted)' }}>{z.population.toLocaleString()} residents</span>
                 <span className="text-[0.72rem]" style={{ color: 'var(--text-muted)' }}>{drains} drain{drains === 1 ? '' : 's'}</span>

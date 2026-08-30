@@ -20,6 +20,10 @@ export const RAIN_BANDS = [
 
 export const BAND_COLORS = { safe: 'var(--risk-safe)', moderate: 'var(--risk-moderate)', high: 'var(--risk-high)', severe: 'var(--risk-severe)' }
 export const bandColor = score => BAND_COLORS[bandOf(score).key]
+
+/** Hex twins of the band colors — for SVG contexts (Leaflet) that can't resolve CSS vars. */
+export const BAND_COLORS_HEX = { safe: '#2DD4BF', moderate: '#FBBF24', high: '#FB923C', severe: '#F87171' }
+export const bandColorHex = score => BAND_COLORS_HEX[bandOf(score).key]
 export const bandLabel = score => bandOf(score).label
 
 export function bandOf(score) {
@@ -40,6 +44,18 @@ export function blockageScore(node = {}) {
   const fill = clamp01(numberOrNull(node.fillPct) == null ? 0 : node.fillPct / 100)
   const stale = clamp01(numberOrNull(node.lastServiceHrs) == null ? 0 : node.lastServiceHrs / 72)
   return Math.round(100 * (0.7 * fill + 0.3 * stale))
+}
+
+/**
+ * Overlay the field team's "mark serviced (demo)" state onto the static drain
+ * telemetry. A serviced drain is simulated as freshly emptied (5% fill,
+ * serviced 0h ago) so flood scores and the task queue react to the action.
+ * Returns a NEW array; the input is never mutated, and non-serviced nodes are
+ * passed through unchanged.
+ */
+export function applyServicedState(nodes, doneMap = {}) {
+  const map = doneMap || {}
+  return (nodes || []).map(node => (map[node.id] === true ? { ...node, fillPct: 5, lastServiceHrs: 0 } : node))
 }
 
 export function floodRisk({ rain6hMm, rainNowMm, zone, drainNodes } = {}) {

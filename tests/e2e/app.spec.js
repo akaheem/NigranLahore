@@ -26,6 +26,7 @@ test.describe('Nigran app', () => {
   })
 
   test('round-trips between the three views', async ({ page }) => {
+    test.setTimeout(90_000)
     await page.goto('/')
     await page.getByRole('button', { name: /city overview/i, exact: true }).click({ force: true })
     await expect(page.getByText(/City Overview — Lahore, today/i)).toBeVisible({ timeout: 15000 })
@@ -38,6 +39,9 @@ test.describe('Nigran app', () => {
   })
 
   test('field ops: mark serviced persists and navigate opens maps', async ({ page }) => {
+    // SwiftShader-rendered page load + nav clicks can consume most of the
+    // default 30s budget on a loaded machine; this test alone needs headroom.
+    test.setTimeout(90_000)
     await page.goto('/')
     await page.getByRole('button', { name: /field ops/i, exact: true }).click({ force: true })
     await expect(page.getByText(/Field Ops — prototype dispatch queue/i)).toBeVisible({ timeout: 15000 })

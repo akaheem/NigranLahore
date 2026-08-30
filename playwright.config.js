@@ -5,6 +5,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 2 : 0,
+  // SwiftShader page loads + nav clicks can consume most of a 30s budget on a
+  // loaded machine; 90s keeps the suite deterministic without masking hangs.
+  timeout: 90_000,
   use: {
     baseURL: 'http://localhost:4173',
     trace: 'on-first-retry',

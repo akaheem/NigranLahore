@@ -44,18 +44,18 @@ export default function CoutureSparkles({ theme }) {
         type = Math.random() < 0.5 ? 'four-point' : 'diamond';
       }
 
-      // Strictly luxury gold color palette
+      // Cyan-on-theme sparkle palette
       const colorRand = Math.random();
       let color;
       if (colorRand < 0.70) {
-        // Champagne Gold (#C9A66B)
-        color = { r: 201, g: 166, b: 107 };
+        // Signal Cyan (#04A8E1)
+        color = { r: 4, g: 168, b: 225 };
       } else if (colorRand < 0.90) {
-        // Luxury Glitter Gold (#D4AF37)
-        color = { r: 212, g: 175, b: 55 };
+        // Light Sky (#60C2EB)
+        color = { r: 96, g: 194, b: 235 };
       } else {
-        // Soft Light Gold / Pearl
-        color = { r: 245, g: 235, b: 220 };
+        // Ice White
+        color = { r: 235, g: 247, b: 252 };
       }
 
       return {

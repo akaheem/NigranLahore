@@ -78,9 +78,9 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, s
                 onClick={() => setHazard(h.id)}
                 className="font-accent text-[0.65rem] uppercase tracking-[0.15em]"
                 style={{
-                  background: hazard === h.id ? 'var(--accent-gold)' : 'transparent',
-                  color: hazard === h.id ? 'var(--on-accent)' : 'var(--text-secondary)',
-                  border: '1px solid var(--border-medium)',
+                  background: hazard === h.id ? 'var(--accent-gold-light)' : 'transparent',
+                  color: hazard === h.id ? 'var(--accent-gold-dark)' : 'var(--text-secondary)',
+                  border: `1px solid ${hazard === h.id ? 'transparent' : 'var(--border-medium)'}`,
                   borderRadius: 999,
                   padding: '0.25rem 0.8rem',
                   cursor: 'pointer',

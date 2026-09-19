@@ -60,10 +60,10 @@ function SelectionRing({ lat, lng, radius = 46 }) {
       radius={radius}
       interactive={false}
       pathOptions={{
-        color: '#4E9E2F',
+        color: '#007A55',
         weight: 2.5,
         dashArray: '6 6',
-        fillColor: '#4E9E2F',
+        fillColor: '#007A55',
         fillOpacity: 0.06,
         className: 'zone-ring',
       }}
@@ -159,10 +159,10 @@ export default function CityMap({
             center={[d.lat, d.lng]}
             radius={isTaskSelected ? 11 : 6}
             pathOptions={{
-              // Selection uses the deeper green: the accent green is also the
+              // Selection uses the deep emerald: the accent emerald is also the
               // "safe" band colour, so a selected low-fill drain drawn in it
               // would be invisible against its own unselected state.
-              color: isTaskSelected ? '#4E9E2F' : bandColorHex(d.fillPct),
+              color: isTaskSelected ? '#007A55' : bandColorHex(d.fillPct),
               weight: isTaskSelected ? 3 : 1.5,
               dashArray: isServiced ? '3 3' : undefined,
               fillColor: bandColorHex(isServiced ? 10 : d.fillPct),

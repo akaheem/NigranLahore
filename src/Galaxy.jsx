@@ -97,15 +97,14 @@ vec3 StarLayer(vec2 uv) {
 
       vec3 base;
       if (seed < 0.65) {
-        // Poster azure (#00A7E1)
-        base = vec3(0.0, 0.655, 0.882);
+        // Accent emerald (#009865)
+        base = vec3(0.0, 0.596, 0.396);
       } else if (seed < 0.90) {
-        // Poster grass green (#6DC04A) — replaces the ice-white branch, which
-        // was invisible once the ground became white.
-        base = vec3(0.427, 0.753, 0.290);
+        // Deep emerald (#007A55)
+        base = vec3(0.0, 0.478, 0.333);
       } else {
-        // Poster sky blue (#5CC0EB)
-        base = vec3(0.361, 0.753, 0.922);
+        // Mint highlight (#4FC79B) — one lighter step, so the field has range
+        base = vec3(0.310, 0.780, 0.608);
       }
       
       // Control saturation dynamically through the uniform

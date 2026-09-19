@@ -24,7 +24,7 @@ export const BAND_COLORS = { safe: 'var(--risk-safe)', moderate: 'var(--risk-mod
 export const bandColor = score => BAND_COLORS[bandOf(score).key]
 
 /** Hex twins of the band colors — for SVG contexts (Leaflet) that can't resolve CSS vars. */
-export const BAND_COLORS_HEX = { safe: '#6DC04A', moderate: '#D97706', high: '#EA580C', severe: '#DC2626' }
+export const BAND_COLORS_HEX = { safe: '#009865', moderate: '#D97706', high: '#EA580C', severe: '#DC2626' }
 export const bandColorHex = score => BAND_COLORS_HEX[bandOf(score).key]
 export const bandLabel = score => bandOf(score).label
 

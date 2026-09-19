@@ -4,31 +4,30 @@
 
 /* ============================================================
    Nigran — Design System
-   Smart City Hackathon Lahore edition: pure white ground, and the
-   poster's grass green #6DC04A as the single interactive accent. The
-   poster's sky blue survives in the atmospheric background layers,
-   never in the chrome. Glassmorphism, premium shadows.
+   White ground, slate ink, deep emerald #009865 as the single accent.
+   There is no blue: emerald, slate and white is the whole system.
 
-   Palette measured from the hackathon poster: white #FFFFFF ground,
-   #5CC0EB sky blue, #6DC04A grass green, #232323 near-black,
-   #00A7E1 badge azure, #607890 slate body copy.
+   Palette measured pixel-by-pixel from the civic platform this is
+   matched to: white #FFFFFF ground, #F9FAFC raised surface, #0F172A
+   ink, #45556C body, #009865 emerald, #007A55 deep emerald, #ECFDF5
+   mint, #06231E dark surface.
    ============================================================ */
 
 :root {
-  /* Light — poster white ground, cool ink, green accent */
+  /* Light — white ground, slate ink, emerald accent */
   --bg-primary: #FFFFFF;
-  --bg-secondary: #F6FAFC;
-  --bg-tertiary: #E9F2F7;
-  --text-primary: #0B2E3F;
-  --text-secondary: #3E6478;
-  --text-muted: #5C8CA3;
-  /* The poster's grass green — and the app's single interactive accent. */
-  --accent-green: #6DC04A;
-  --accent-green-dark: #4E9E2F;  /* deeper: accent text on white, hover fills */
-  --accent-green-light: #DCF0CE;
-  /* Ink for text sitting on an accent fill. Dark-on-green is 6.3:1; white on
-     this green is only 2.3:1, so the nav pill and the CTAs use the ink. */
-  --on-accent: #0B2E3F;
+  --bg-secondary: #F9FAFC;
+  --bg-tertiary: #F1F4F9;
+  --text-primary: #0F172A;
+  --text-secondary: #45556C;
+  --text-muted: #64748B;
+  /* Deep emerald: the interactive accent, and the display-type colour. */
+  --accent-green: #009865;
+  --accent-green-dark: #007A55;  /* small accent text on white, hover fills */
+  --accent-green-light: #ECFDF5;
+  /* White on this emerald is 3.7:1 — the same pairing the reference site uses
+     on its own buttons. Deep enough that ink-on-emerald is no longer needed. */
+  --on-accent: #FFFFFF;
   /* The `gold` names are historical — this app was born a cream/gold editorial
      theme, and they are what the whole UI already reads from. Kept as aliases
      rather than renamed, so there is one place to change the accent. */
@@ -36,15 +35,15 @@
   --accent-gold-dark: var(--accent-green-dark);
   --accent-gold-light: var(--accent-green-light);
   --color-gold: var(--accent-green);
-  --border-light: rgba(11, 46, 63, 0.10);
-  --border-medium: rgba(109, 192, 74, 0.45);
-  --shadow-premium: 0 16px 44px rgba(11, 46, 63, 0.10);
-  --shadow-premium-hover: 0 24px 60px rgba(11, 46, 63, 0.14);
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(109, 192, 74, 0.30);
+  --border-light: rgba(15, 23, 42, 0.08);
+  --border-medium: rgba(0, 152, 101, 0.32);
+  --shadow-premium: 0 16px 44px rgba(15, 23, 42, 0.07);
+  --shadow-premium-hover: 0 24px 60px rgba(15, 23, 42, 0.10);
+  --glass-bg: rgba(255, 255, 255, 0.76);
+  --glass-border: rgba(0, 152, 101, 0.20);
   --glass-blur: 18px;
-  --glow-color: rgba(109, 192, 74, 0.14);
-  --cta-bg: #0B2E3F;
+  --glow-color: rgba(0, 152, 101, 0.10);
+  --cta-bg: #06231E;
   --cta-text: #FFFFFF;
 
   /* Status hues. Green → amber → orange → red: the conventional risk ramp. The
@@ -57,10 +56,10 @@
   --risk-info: #0284C7;
 
   /* Legacy accent names kept alive so nothing references dead hues. */
-  --accent-plum: #0E3A52;
-  --accent-lavender: #A8DE8B;
+  --accent-plum: #0F172A;
+  --accent-lavender: #D0FAE6;
   --accent-rosegold: #FB923C;
-  --accent-sage: #6DC04A;
+  --accent-sage: #009865;
 
   --font-editorial: 'Cormorant Garamond', Georgia, serif;
   --font-ui: 'Inter', system-ui, sans-serif;
@@ -78,11 +77,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Subtle green radial glow at the top of the page — a quiet depth cue,
-   no noise, no dots. */
+/* A whisper of emerald at the top of the page — a depth cue, no noise. */
 html, body {
   background-color: var(--bg-primary);
-  background-image: radial-gradient(60% 38% at 50% 0%, rgba(109, 192, 74, 0.07), transparent 60%);
+  background-image: radial-gradient(60% 38% at 50% 0%, rgba(0, 152, 101, 0.05), transparent 60%);
   background-repeat: no-repeat;
   color: var(--text-primary);
   font-family: var(--font-ui);
@@ -113,7 +111,7 @@ h1, h2, h3, h4, h5, h6 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at center, transparent 55%, rgba(11, 46, 63, 0.06) 100%);
+  background: radial-gradient(circle at center, transparent 55%, rgba(15, 23, 42, 0.04) 100%);
   pointer-events: none;
   z-index: 900;
   transition: background 0.5s var(--transition-lux);
@@ -156,8 +154,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Display headings: the italic serif at 600. Cormorant at 400 is very light, so
    the italic 600/700 faces are requested in index.html — weight is what carries
-   these. The deeper green is deliberate: the vivid accent green is only ~2.3:1
-   as text on white, this one is ~3.4:1. */
+   these. The deep emerald is deliberate: the bright accent emerald is 3.7:1 as
+   text on white, this one is 5.4:1. */
 .editorial-header-num {
   font-family: var(--font-editorial);
   font-style: italic;
@@ -211,14 +209,14 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(255, 255, 255, 0.82) !important;
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
-  border-bottom: 1px solid rgba(109, 192, 74, 0.28) !important;
-  box-shadow: 0 8px 32px rgba(11, 46, 63, 0.06), inset 0 1px rgba(255, 255, 255, 0.6) !important;
+  border-bottom: 1px solid rgba(0, 152, 101, 0.18) !important;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.05), inset 0 1px rgba(255, 255, 255, 0.6) !important;
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .navbar-glass.scrolled {
   background: rgba(255, 255, 255, 0.92) !important;
-  box-shadow: 0 12px 40px rgba(11, 46, 63, 0.10) !important;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08) !important;
 }
 
 .glass-chip {

@@ -65,9 +65,9 @@ function App() {
     setView('citizen')
   }
 
-  // Poster two-tone: azure + green. The old third stop was dark navy (#0B2A3C),
-  // which composites as a grey stain once the ground is white.
-  const etherColors = ['#00A7E1', '#5CC0EB', '#6DC04A']
+  // Emerald only — the reference has no blue at all. Kept very faint (see the
+  // wrapper opacity below) so the page still reads as flat white.
+  const etherColors = ['#009865', '#4FC79B', '#007A55']
 
   return (
     <div className="min-h-screen relative overflow-x-hidden">
@@ -75,7 +75,7 @@ function App() {
       {/* 1. Galaxy starfield — deepest layer */}
       <div className="fixed inset-0 -z-20" aria-hidden="true">
         <Suspense fallback={null}>
-          <Galaxy saturation={0.9} />
+          <Galaxy saturation={0.55} />
         </Suspense>
       </div>
 
@@ -83,7 +83,7 @@ function App() {
       <div
         className="fixed inset-0 -z-10 pointer-events-none"
         aria-hidden="true"
-        style={{ opacity: 0.5 }}
+        style={{ opacity: 0.18 }}
       >
         <Suspense fallback={null}>
           <LiquidEther
@@ -104,7 +104,7 @@ function App() {
         </Suspense>
       </div>
 
-      {/* 3. Mouse-parallax azure/green sparkles */}
+      {/* 3. Mouse-parallax emerald sparkles */}
       <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
         <CoutureSparkles theme="light" />
       </div>
@@ -115,13 +115,13 @@ function App() {
           animate={{ x: [0, 80, -40, 0], y: [0, -60, 50, 0], scale: [1, 1.2, 0.9, 1] }}
           transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
           className="ambient-blob"
-          style={{ top: '12%', left: '18%', width: 350, height: 350, background: 'rgba(0, 167, 225, 0.14)' }}
+          style={{ top: '12%', left: '18%', width: 350, height: 350, background: 'rgba(0, 152, 101, 0.05)' }}
         />
         <motion.div
           animate={{ x: [0, -70, 60, 0], y: [0, 80, -40, 0], scale: [1, 0.9, 1.15, 1] }}
           transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
           className="ambient-blob"
-          style={{ top: '30%', right: '14%', width: 400, height: 400, background: 'rgba(109, 192, 74, 0.12)' }}
+          style={{ top: '30%', right: '14%', width: 400, height: 400, background: 'rgba(0, 122, 85, 0.05)' }}
         />
       </div>
 
@@ -144,9 +144,11 @@ function App() {
                   onClick={() => setView(v.id)}
                   className="font-accent text-[0.68rem] uppercase tracking-[0.15em]"
                   style={{
-                    background: view === v.id ? 'var(--accent-gold)' : 'transparent',
-                    color: view === v.id ? 'var(--on-accent)' : 'var(--text-secondary)',
-                    border: '1px solid var(--border-medium)',
+                    // Active nav is a mint pill with deep-emerald text — the
+                    // reference's own nav treatment, and it clears AA on white.
+                    background: view === v.id ? 'var(--accent-gold-light)' : 'transparent',
+                    color: view === v.id ? 'var(--accent-gold-dark)' : 'var(--text-secondary)',
+                    border: `1px solid ${view === v.id ? 'transparent' : 'var(--border-medium)'}`,
                     borderRadius: 999,
                     padding: '0.35rem 1rem',
                     cursor: 'pointer',

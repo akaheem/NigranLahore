@@ -33,28 +33,29 @@ export default function CoutureSparkles({ theme }) {
       if (!isLarge) {
         // 90% Tiny gold particles (1-2px)
         size = 1.0 + Math.random() * 1.0;
-        baseOpacity = 0.26 + Math.random() * 0.10; // 0.26 to 0.36
+        baseOpacity = 0.10 + Math.random() * 0.06; // 0.10 to 0.16
         type = Math.random() < 0.65 ? 'bokeh' : 'diamond';
       } else {
         // 10% Larger luxury sparkles (3-4px)
         size = 3.0 + Math.random() * 1.0;
-        baseOpacity = 0.32 + Math.random() * 0.10; // 0.32 to 0.42
+        baseOpacity = 0.13 + Math.random() * 0.06; // 0.13 to 0.19
         type = Math.random() < 0.5 ? 'four-point' : 'diamond';
       }
 
-      // Poster two-tone sparkle palette. The old third colour was ice white,
-      // which is invisible against the white ground.
+      // Emerald family only — the reference has no blue. Three steps of one hue;
+      // the whole layer is dialled right down in App.jsx, so this reads as paper
+      // texture rather than decoration.
       const colorRand = Math.random();
       let color;
       if (colorRand < 0.60) {
-        // Poster azure (#00A7E1)
-        color = { r: 0, g: 167, b: 225 };
+        // Accent emerald (#009865)
+        color = { r: 0, g: 152, b: 101 };
       } else if (colorRand < 0.85) {
-        // Poster grass green (#6DC04A)
-        color = { r: 109, g: 192, b: 74 };
+        // Deep emerald (#007A55)
+        color = { r: 0, g: 122, b: 85 };
       } else {
-        // Poster sky blue (#5CC0EB)
-        color = { r: 92, g: 192, b: 235 };
+        // Mint highlight (#4FC79B)
+        color = { r: 79, g: 199, b: 155 };
       }
 
       return {

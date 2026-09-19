@@ -154,8 +154,8 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
               <button
                 type="button"
                 onClick={locateMe}
-                className="font-accent text-[0.65rem] uppercase tracking-[0.12em] whitespace-nowrap"
-                style={{ background: 'none', border: '1px solid var(--accent-gold)', color: 'var(--accent-gold)', borderRadius: 8, padding: '0.7rem 0.9rem', cursor: 'pointer' }}
+                className="btn-lux btn-lux-outline"
+                style={{ padding: '0.62rem 1.1rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
               >
                 Locate me
               </button>

@@ -142,17 +142,19 @@ function App() {
                   key={v.id}
                   type="button"
                   onClick={() => setView(v.id)}
-                  className="font-accent text-[0.68rem] uppercase tracking-[0.15em]"
+                  className="text-[0.82rem] font-medium"
                   style={{
-                    // Active nav is a mint pill with deep-emerald text — the
-                    // reference's own nav treatment, and it clears AA on white.
+                    // Active nav is a mint pill with deep-emerald text, and the
+                    // inactive items are plain text with no border — the
+                    // reference's nav treatment exactly. The old outline on
+                    // every unselected item read as a row of buttons.
                     background: view === v.id ? 'var(--accent-gold-light)' : 'transparent',
                     color: view === v.id ? 'var(--accent-gold-dark)' : 'var(--text-secondary)',
-                    border: `1px solid ${view === v.id ? 'transparent' : 'var(--border-medium)'}`,
+                    border: '1px solid transparent',
                     borderRadius: 999,
-                    padding: '0.35rem 1rem',
+                    padding: '0.4rem 1rem',
                     cursor: 'pointer',
-                    transition: 'all .3s var(--transition-lux)',
+                    transition: 'background .3s var(--transition-lux), color .3s var(--transition-lux)',
                   }}
                 >
                   {v.label}

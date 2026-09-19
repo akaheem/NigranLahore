@@ -4,7 +4,6 @@ import { RainTimeline, AqiSparkline } from './Timeline24h.jsx'
 import { ZONES, DRAIN_NODES, COOL_ASSETS } from '../data/lahore.js'
 import { WASTE, AIR_RECORD_FACT } from '../data/calibration.js'
 import { bandColor } from '../lib/risk.js'
-import { AlertTriangle, Clock, Droplets, Tent } from 'lucide-react'
 
 const hazards = [
   { id: 'flood', label: 'Flood' },
@@ -31,7 +30,7 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, s
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
-          <p className="editorial-header-num text-2xl">City Overview — Lahore, today</p>
+          <p className="editorial-header-num text-2xl heading-split">City Overview <em>— Lahore, today</em></p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             {zonesHigh} of 8 zones at high risk · {criticalDrains} critical drains ·{' '}
             {risk.rain6hMm != null ? `${risk.rain6hMm.toFixed(1)} mm` : '—'} rain in 6h
@@ -43,27 +42,30 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, s
         </div>
       </div>
 
-      {/* Impact counters */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="lux-card-glass" style={{ padding: '1rem 1.25rem' }}>
-          <AlertTriangle size={16} color="var(--risk-high)" />
-          <p className="font-editorial text-3xl mt-2">{zonesHigh}<span className="text-sm"> / 8</span></p>
-          <p className="text-[0.62rem] uppercase tracking-[0.15em] font-accent" style={{ color: 'var(--text-muted)' }}>Zones ≥ High</p>
+      {/* Impact counters — the reference's stat strip: one grey band, evenly
+          split, hairline dividers, big number over a tracked caption. The
+          relief figure is the emerald one, as the reference greens its own
+          positive stats. */}
+      <div className="stat-strip mb-8" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <div>
+          <p className="font-editorial text-4xl" style={{ color: 'var(--text-primary)' }}>
+            {zonesHigh}<span className="text-base" style={{ color: 'var(--text-muted)' }}> / 8</span>
+          </p>
+          <p className="text-[0.62rem] uppercase tracking-[0.15em] font-accent mt-1" style={{ color: 'var(--text-muted)' }}>Zones ≥ High</p>
         </div>
-        <div className="lux-card-glass" style={{ padding: '1rem 1.25rem' }}>
-          <Clock size={16} color="var(--accent-gold)" />
-          <p className="font-editorial text-3xl mt-2">{risk.rain6hMm != null ? risk.rain6hMm.toFixed(1) : '—'}<span className="text-sm"> mm</span></p>
-          <p className="text-[0.62rem] uppercase tracking-[0.15em] font-accent" style={{ color: 'var(--text-muted)' }}>Rain 6h</p>
+        <div>
+          <p className="font-editorial text-4xl" style={{ color: 'var(--text-primary)' }}>
+            {risk.rain6hMm != null ? risk.rain6hMm.toFixed(1) : '—'}<span className="text-base" style={{ color: 'var(--text-muted)' }}> mm</span>
+          </p>
+          <p className="text-[0.62rem] uppercase tracking-[0.15em] font-accent mt-1" style={{ color: 'var(--text-muted)' }}>Rain 6h</p>
         </div>
-        <div className="lux-card-glass" style={{ padding: '1rem 1.25rem' }}>
-          <Droplets size={16} color="var(--risk-moderate)" />
-          <p className="font-editorial text-3xl mt-2">{criticalDrains}</p>
-          <p className="text-[0.62rem] uppercase tracking-[0.15em] font-accent" style={{ color: 'var(--text-muted)' }}>Critical drains</p>
+        <div>
+          <p className="font-editorial text-4xl" style={{ color: 'var(--text-primary)' }}>{criticalDrains}</p>
+          <p className="text-[0.62rem] uppercase tracking-[0.15em] font-accent mt-1" style={{ color: 'var(--text-muted)' }}>Critical drains</p>
         </div>
-        <div className="lux-card-glass" style={{ padding: '1rem 1.25rem' }}>
-          <Tent size={16} color="var(--risk-safe)" />
-          <p className="font-editorial text-3xl mt-2">{reliefCapacity.toLocaleString()}</p>
-          <p className="text-[0.62rem] uppercase tracking-[0.15em] font-accent" style={{ color: 'var(--text-muted)' }}>Relief capacity / day</p>
+        <div>
+          <p className="font-editorial text-4xl" style={{ color: 'var(--accent-gold-dark)' }}>{reliefCapacity.toLocaleString()}</p>
+          <p className="text-[0.62rem] uppercase tracking-[0.15em] font-accent mt-1" style={{ color: 'var(--text-muted)' }}>Relief capacity / day</p>
         </div>
       </div>
 
@@ -76,15 +78,17 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, s
                 key={h.id}
                 type="button"
                 onClick={() => setHazard(h.id)}
-                className="font-accent text-[0.65rem] uppercase tracking-[0.15em]"
+                className="text-[0.78rem] font-medium"
                 style={{
+                  // Sentence case and no outline on the unselected ones, the
+                  // same treatment as the header nav.
                   background: hazard === h.id ? 'var(--accent-gold-light)' : 'transparent',
                   color: hazard === h.id ? 'var(--accent-gold-dark)' : 'var(--text-secondary)',
-                  border: `1px solid ${hazard === h.id ? 'transparent' : 'var(--border-medium)'}`,
+                  border: '1px solid transparent',
                   borderRadius: 999,
-                  padding: '0.25rem 0.8rem',
+                  padding: '0.3rem 0.9rem',
                   cursor: 'pointer',
-                  transition: 'all .3s var(--transition-lux)',
+                  transition: 'background .3s var(--transition-lux), color .3s var(--transition-lux)',
                 }}
               >
                 {h.label}
@@ -134,7 +138,7 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, s
 
       {/* Outlook — 24h detail + 72h horizon, all live Open-Meteo */}
       <div className="lux-card-glass mb-6" style={{ padding: '1.1rem 1.3rem' }}>
-        <p className="editorial-header-num text-lg">Forecast — when will it rain, and how hard?</p>
+        <p className="editorial-header-num text-lg heading-split">Forecast <em>— when will it rain, and how hard?</em></p>
         <p className="text-[0.72rem] mt-1" style={{ color: 'var(--text-secondary)' }}>
           Hour-by-hour rainfall from Open-Meteo's weather model. In the 24-hour strip each bar is one hour — its height
           is the millimetres expected and its darkness is how confident the model is. The 72-hour strip compresses three

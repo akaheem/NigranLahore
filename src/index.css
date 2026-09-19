@@ -118,21 +118,20 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ===== Glass primitives ===== */
+/* Flat card: white, hairline border, no blur and no lift — the reference's
+   own card treatment. The depth cue is the border, not a shadow. */
 .lux-card-glass {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-premium);
-  border-radius: 14px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  border-radius: 16px;
   padding: 1.5rem;
-  transition: transform var(--time-lux) var(--transition-lux), box-shadow var(--time-lux) var(--transition-lux), border-color var(--time-lux) var(--transition-lux);
+  transition: box-shadow var(--time-lux) var(--transition-lux), border-color var(--time-lux) var(--transition-lux);
 }
 
 .lux-card-glass:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-premium-hover);
-  border-color: var(--accent-gold);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.07);
+  border-color: rgba(15, 23, 42, 0.14);
 }
 
 /* ===== Editorial layout utilities ===== */
@@ -158,23 +157,91 @@ h1, h2, h3, h4, h5, h6 {
    text on white, this one is 5.4:1. */
 .editorial-header-num {
   font-family: var(--font-editorial);
-  font-style: italic;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--accent-gold-dark);
 }
 
+/* The reference's signature: one serif line, two tones. The lead phrase in
+   ink, the phrase after the dash in emerald — same face, same weight, only
+   the colour carries the split. */
+.heading-split { color: var(--text-primary); }
+.heading-split em {
+  font-style: normal;
+  color: var(--accent-gold-dark);
+}
+
+/* Section eyebrow — a mint pill with an emerald dot, uppercase and tracked. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--accent-green-light);
+  color: var(--accent-gold-dark);
+  border-radius: 999px;
+  padding: 0.32rem 0.9rem;
+  font-family: var(--font-accent);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent-gold);
+  flex: none;
+}
+
+/* Mint highlight panel — where a headline number lives, as in the reference. */
+.panel-mint {
+  background: var(--accent-green-light);
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+}
+
+/* Stat strip — grey band, evenly split, hairline dividers between. */
+.stat-strip {
+  background: var(--bg-tertiary);
+  border-radius: 14px;
+  display: grid;
+  overflow: hidden;
+}
+
+.stat-strip > * {
+  padding: 1.1rem 1rem;
+  text-align: center;
+}
+
+.stat-strip > * + * {
+  border-left: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 640px) {
+  .stat-strip { grid-template-columns: repeat(2, 1fr) !important; }
+  .stat-strip > *:nth-child(odd) { border-left: none; }
+  .stat-strip > *:nth-child(n + 3) { border-top: 1px solid rgba(15, 23, 42, 0.08); }
+}
+
 /* ===== Buttons (adapted: tighter padding for dashboard toolbar) ===== */
+/* Buttons are pills. Sentence case and semibold, not uppercase-and-tracked:
+   the reference's own buttons read "Lodge Eco-Complaint", not a label. */
 .btn-lux {
   position: relative;
   overflow: hidden;
   background: var(--accent-gold);
   color: var(--on-accent);
-  padding: 0.75rem 1.6rem;
-  font-family: var(--font-accent);
-  font-size: 0.82rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  padding: 0.7rem 1.5rem;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   border: 1px solid transparent;
+  border-radius: 999px;
   cursor: pointer;
   transition: all var(--time-lux) var(--transition-lux);
 }
@@ -203,6 +270,18 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--accent-gold);
   color: var(--on-accent);
 }
+
+/* Secondary pill — the reference's "View District Stats": a quiet surface
+   with ink text, sitting next to the solid primary. */
+.btn-lux-soft {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid transparent;
+}
+
+.btn-lux-soft::before { background: rgba(15, 23, 42, 0.06); }
+
+.btn-lux-soft:hover { color: var(--text-primary); }
 
 /* ===== Glass navbar (full-width, blur 24, luminous glacier) ===== */
 .navbar-glass {
@@ -362,4 +441,15 @@ html { scrollbar-width: thin; scrollbar-color: var(--bg-tertiary) var(--bg-prima
   background: var(--glass-bg);
   color: var(--text-primary);
   border-color: var(--glass-border);
+}
+
+/* Leaflet ships its attribution links in #0078A8. It is the last blue in the
+   app, and it sits on every map. */
+.leaflet-container a {
+  color: var(--accent-gold-dark);
+}
+
+.leaflet-container a:hover,
+.leaflet-container a:focus {
+  color: var(--accent-gold);
 }

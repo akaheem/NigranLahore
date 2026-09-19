@@ -21,12 +21,14 @@ const renderView = (risk = buildRisk(), props = {}) =>
 describe('CityOverviewView', () => {
   it('renders the impact counters', () => {
     renderView()
-    const reliefCard = screen.getByText('Relief capacity / day').closest('.lux-card-glass')
-    expect(reliefCard.textContent).toContain('7,870')
-    const zonesCard = screen.getByText('Zones ≥ High').closest('.lux-card-glass')
-    expect(zonesCard.textContent).toContain('/ 8')
-    const drainsCard = screen.getByText('Critical drains', { selector: 'p' }).closest('.lux-card-glass')
-    expect(drainsCard).not.toBeNull()
+    // The four counters are one stat strip now, not four cards, so each value
+    // is asserted inside its own tile of that strip.
+    const reliefTile = screen.getByText('Relief capacity / day').closest('.stat-strip > *')
+    expect(reliefTile.textContent).toContain('7,870')
+    const zonesTile = screen.getByText('Zones ≥ High').closest('.stat-strip > *')
+    expect(zonesTile.textContent).toContain('/ 8')
+    const drainsTile = screen.getByText('Critical drains', { selector: 'p' }).closest('.stat-strip > *')
+    expect(drainsTile).not.toBeNull()
   })
 
   it('summarizes the header line with high-risk zones and critical drains', () => {

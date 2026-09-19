@@ -45,7 +45,7 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch, service
     <div className="editorial-container py-10">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
-          <p className="editorial-header-num text-2xl">Field Ops — prototype dispatch queue</p>
+          <p className="editorial-header-num text-2xl heading-split">Field Ops <em>— prototype dispatch queue</em></p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Decision-support queue for WASA/LWMC-style municipal teams · {openTasks.length} open tasks · rain urgency from the live Open-Meteo forecast · drain fill levels follow a time-driven refill model (D-1 fills in ~9 days, per the calibrated waste-load corridor) {DISPATCH_CITATION}
           </p>

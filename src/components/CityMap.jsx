@@ -20,13 +20,13 @@ function MapLegend() {
       className="map-legend"
       style={{
         position: 'absolute', bottom: 10, left: 10, zIndex: 1000,
-        background: 'rgba(6, 18, 29, .82)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+        background: 'var(--glass-bg)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
         borderRadius: 8, padding: '6px 10px', display: 'flex', gap: 8, alignItems: 'center',
-        border: '1px solid rgba(4, 168, 225, .35)',
+        border: '1px solid var(--glass-border)',
       }}
     >
       {RISK_LEGEND.map(b => (
-        <span key={b.key} className="flex items-center gap-1 font-accent" style={{ fontSize: '0.55rem', color: '#EAF6FC', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <span key={b.key} className="flex items-center gap-1 font-accent" style={{ fontSize: '0.55rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           <span style={{ width: 9, height: 9, borderRadius: '50%', background: BAND_COLORS[b.key], display: 'inline-block' }} />
           {b.label}
         </span>
@@ -60,10 +60,10 @@ function SelectionRing({ lat, lng, radius = 46 }) {
       radius={radius}
       interactive={false}
       pathOptions={{
-        color: '#04A8E1',
+        color: '#4E9E2F',
         weight: 2.5,
         dashArray: '6 6',
-        fillColor: '#04A8E1',
+        fillColor: '#4E9E2F',
         fillOpacity: 0.06,
         className: 'zone-ring',
       }}
@@ -159,7 +159,10 @@ export default function CityMap({
             center={[d.lat, d.lng]}
             radius={isTaskSelected ? 11 : 6}
             pathOptions={{
-              color: isTaskSelected ? '#04A8E1' : bandColorHex(d.fillPct),
+              // Selection uses the deeper green: the accent green is also the
+              // "safe" band colour, so a selected low-fill drain drawn in it
+              // would be invisible against its own unselected state.
+              color: isTaskSelected ? '#4E9E2F' : bandColorHex(d.fillPct),
               weight: isTaskSelected ? 3 : 1.5,
               dashArray: isServiced ? '3 3' : undefined,
               fillColor: bandColorHex(isServiced ? 10 : d.fillPct),

@@ -17,13 +17,13 @@ test.describe('Nigran app', () => {
     expect(errors).toEqual([])
   })
 
-  test('dark theme is fixed and persists across reload', async ({ page }) => {
-    // The hackathon edition ships dark-only: no toggle button, data-theme pinned
+  test('light theme is fixed and persists across reload', async ({ page }) => {
+    // The hackathon edition ships light-only: no toggle button, data-theme pinned
     await page.goto('/')
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
     await expect(page.getByRole('button', { name: /light/i })).toHaveCount(0)
     await page.reload()
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   })
 
   test('round-trips between the three views', async ({ page }) => {

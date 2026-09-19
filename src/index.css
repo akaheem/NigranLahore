@@ -4,36 +4,53 @@
 
 /* ============================================================
    Nigran — Design System
-   Hackathon cyan edition: deep ocean navy + signal cyan (#00A7E1),
-   glassmorphism, premium shadows, Cormorant/Inter/Outfit.
+   Smart City Hackathon Lahore edition: pure white ground, and the
+   poster's grass green #6DC04A as the single interactive accent. The
+   poster's sky blue survives in the atmospheric background layers,
+   never in the chrome. Glassmorphism, premium shadows.
+
+   Palette measured from the hackathon poster: white #FFFFFF ground,
+   #5CC0EB sky blue, #6DC04A grass green, #232323 near-black,
+   #00A7E1 badge azure, #607890 slate body copy.
    ============================================================ */
 
 :root {
-  /* Light — glacier white / deep sea ink / signal cyan */
-  --bg-primary: #F5FBFE;
-  --bg-secondary: #FFFFFF;
-  --bg-tertiary: #EAF6FC;
+  /* Light — poster white ground, cool ink, green accent */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F6FAFC;
+  --bg-tertiary: #E9F2F7;
   --text-primary: #0B2E3F;
   --text-secondary: #3E6478;
   --text-muted: #5C8CA3;
-  --accent-gold: #00A7E1;
-  --accent-gold-dark: #0088B8;
-  --accent-gold-light: #BBE5F7;
-  --color-gold: #00A7E1;
-  --border-light: rgba(11, 46, 63, 0.08);
-  --border-medium: rgba(0, 167, 225, 0.35);
-  --shadow-premium: 0 20px 60px rgba(11, 46, 63, 0.08);
-  --shadow-premium-hover: 0 30px 80px rgba(11, 46, 63, 0.12);
+  /* The poster's grass green — and the app's single interactive accent. */
+  --accent-green: #6DC04A;
+  --accent-green-dark: #4E9E2F;  /* deeper: accent text on white, hover fills */
+  --accent-green-light: #DCF0CE;
+  /* Ink for text sitting on an accent fill. Dark-on-green is 6.3:1; white on
+     this green is only 2.3:1, so the nav pill and the CTAs use the ink. */
+  --on-accent: #0B2E3F;
+  /* The `gold` names are historical — this app was born a cream/gold editorial
+     theme, and they are what the whole UI already reads from. Kept as aliases
+     rather than renamed, so there is one place to change the accent. */
+  --accent-gold: var(--accent-green);
+  --accent-gold-dark: var(--accent-green-dark);
+  --accent-gold-light: var(--accent-green-light);
+  --color-gold: var(--accent-green);
+  --border-light: rgba(11, 46, 63, 0.10);
+  --border-medium: rgba(109, 192, 74, 0.45);
+  --shadow-premium: 0 16px 44px rgba(11, 46, 63, 0.10);
+  --shadow-premium-hover: 0 24px 60px rgba(11, 46, 63, 0.14);
   --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(0, 167, 225, 0.22);
+  --glass-border: rgba(109, 192, 74, 0.30);
   --glass-blur: 18px;
-  --glow-color: rgba(0, 167, 225, 0.08);
+  --glow-color: rgba(109, 192, 74, 0.14);
   --cta-bg: #0B2E3F;
   --cta-text: #FFFFFF;
 
-  /* Status hues — defined in BOTH themes (dark-only tokens in the source caused
-     guaranteed-invalid values in light mode; audit fix). */
-  --risk-safe: #0E9F8A;
+  /* Status hues. Green → amber → orange → red: the conventional risk ramp. The
+     accent green doubles as the safe band, so the brand colour and the "all
+     clear" reading are deliberately one hue. */
+  --risk-safe: var(--accent-green);
   --risk-moderate: #D97706;
   --risk-high: #EA580C;
   --risk-severe: #DC2626;
@@ -41,49 +58,15 @@
 
   /* Legacy accent names kept alive so nothing references dead hues. */
   --accent-plum: #0E3A52;
-  --accent-lavender: #38BDF8;
+  --accent-lavender: #A8DE8B;
   --accent-rosegold: #FB923C;
-  --accent-sage: #2DD4BF;
+  --accent-sage: #6DC04A;
 
   --font-editorial: 'Cormorant Garamond', Georgia, serif;
   --font-ui: 'Inter', system-ui, sans-serif;
   --font-accent: 'Outfit', sans-serif;
   --transition-lux: cubic-bezier(0.16, 1, 0.3, 1);
   --time-lux: 0.8s;
-}
-
-[data-theme='dark'], .dark {
-  /* Dark — deep ocean navy / signal cyan */
-  --bg-primary: #06121D;
-  --bg-secondary: #0A1B2A;
-  --bg-tertiary: #0E2436;
-  --text-primary: #EAF6FC;
-  --text-secondary: #A8C9DA;
-  --text-muted: #6E93A8;
-  --accent-gold: #00A7E1;
-  --accent-gold-dark: #33BBEA; /* hover layer: lighter cyan reads better on dark */
-  --accent-gold-light: #BBE5F7;
-  --color-gold: #00A7E1;
-  --accent-plum: #0E3A52;
-  --accent-lavender: #38BDF8;
-  --accent-rosegold: #FB923C;
-  --accent-sage: #2DD4BF;
-  --border-light: rgba(255, 255, 255, 0.07);
-  --border-medium: rgba(0, 167, 225, 0.4);
-  --shadow-premium: 0 25px 60px rgba(0, 0, 0, 0.55), inset 0 1px rgba(255, 255, 255, 0.06);
-  --shadow-premium-hover: 0 35px 80px rgba(0, 0, 0, 0.65);
-  --glass-bg: rgba(10, 27, 42, 0.72);
-  --glass-border: rgba(0, 167, 225, 0.25);
-  --glass-blur: 20px;
-  --glow-color: rgba(0, 167, 225, 0.10);
-  --cta-bg: #00A7E1;
-  --cta-text: #04141F;
-
-  --risk-safe: #2DD4BF;
-  --risk-moderate: #FBBF24;
-  --risk-high: #FB923C;
-  --risk-severe: #F87171;
-  --risk-info: #38BDF8;
 }
 
 /* Global base */
@@ -95,20 +78,16 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Subtle cyan radial glow at the top of the page — a quiet depth cue,
+/* Subtle green radial glow at the top of the page — a quiet depth cue,
    no noise, no dots. */
 html, body {
   background-color: var(--bg-primary);
-  background-image: radial-gradient(60% 38% at 50% 0%, rgba(0, 167, 225, 0.05), transparent 60%);
+  background-image: radial-gradient(60% 38% at 50% 0%, rgba(109, 192, 74, 0.07), transparent 60%);
   background-repeat: no-repeat;
   color: var(--text-primary);
   font-family: var(--font-ui);
   overflow-x: hidden;
   transition: background-color 0.5s var(--transition-lux), color 0.5s var(--transition-lux), border-color 0.5s var(--transition-lux);
-}
-
-[data-theme='dark'] body, .dark body {
-  background-image: radial-gradient(60% 38% at 50% 0%, rgba(0, 167, 225, 0.07), transparent 60%);
 }
 
 /* Dashboard headings stay Inter (dense data UI) — editorial serif reserved for
@@ -138,10 +117,6 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
   z-index: 900;
   transition: background 0.5s var(--transition-lux);
-}
-
-[data-theme='dark'] .vignette, .dark .vignette {
-  background: radial-gradient(circle at center, transparent 55%, rgba(2, 10, 18, 0.35) 100%) !important;
 }
 
 /* ===== Glass primitives ===== */
@@ -179,10 +154,15 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
 }
 
+/* Display headings: the italic serif at 600. Cormorant at 400 is very light, so
+   the italic 600/700 faces are requested in index.html — weight is what carries
+   these. The deeper green is deliberate: the vivid accent green is only ~2.3:1
+   as text on white, this one is ~3.4:1. */
 .editorial-header-num {
   font-family: var(--font-editorial);
   font-style: italic;
-  color: var(--accent-gold);
+  font-weight: 600;
+  color: var(--accent-gold-dark);
 }
 
 /* ===== Buttons (adapted: tighter padding for dashboard toolbar) ===== */
@@ -190,7 +170,7 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   overflow: hidden;
   background: var(--accent-gold);
-  color: #FFFFFF;
+  color: var(--on-accent);
   padding: 0.75rem 1.6rem;
   font-family: var(--font-accent);
   font-size: 0.82rem;
@@ -217,60 +197,28 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-lux-outline {
   background: transparent;
-  color: var(--accent-gold);
+  color: var(--accent-gold-dark);
   border: 1px solid var(--accent-gold);
 }
 
 .btn-lux-outline:hover {
   background: var(--accent-gold);
-  color: #FFFFFF;
+  color: var(--on-accent);
 }
 
-[data-theme='dark'] .btn-lux-outline, .dark .btn-lux-outline {
-  background-color: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--accent-gold);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 10px 30px rgba(0, 0, 0, 0.25);
-  color: var(--accent-gold);
-  transition: all 0.4s var(--transition-lux);
-}
-
-[data-theme='dark'] .btn-lux-outline:hover, .dark .btn-lux-outline:hover {
-  background-color: var(--accent-gold);
-  border-color: var(--accent-gold-dark);
-  box-shadow: 0 15px 35px rgba(0, 167, 225, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  color: #FFFFFF;
-}
-
-/* ===== Glass navbar (full-width, blur 24, luminous glacier / deep navy) ===== */
+/* ===== Glass navbar (full-width, blur 24, luminous glacier) ===== */
 .navbar-glass {
-  background: rgba(245, 251, 254, 0.8) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
-  border-bottom: 1px solid rgba(0, 167, 225, 0.25) !important;
+  border-bottom: 1px solid rgba(109, 192, 74, 0.28) !important;
   box-shadow: 0 8px 32px rgba(11, 46, 63, 0.06), inset 0 1px rgba(255, 255, 255, 0.6) !important;
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .navbar-glass.scrolled {
-  background: rgba(245, 251, 254, 0.9) !important;
-  box-shadow: 0 12px 40px rgba(11, 46, 63, 0.1) !important;
-}
-
-[data-theme='dark'] .navbar-glass, .dark .navbar-glass {
-  background: rgba(6, 18, 29, 0.82) !important;
-  border: 1px solid rgba(0, 167, 225, 0.28) !important;
-  border-top: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px rgba(255, 255, 255, 0.1) !important;
-  border-radius: 0 !important;
-}
-
-[data-theme='dark'] .navbar-glass.scrolled, .dark .navbar-glass.scrolled {
-  background: rgba(6, 18, 29, 0.92) !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: 0 12px 40px rgba(11, 46, 63, 0.10) !important;
 }
 
 .glass-chip {
@@ -278,13 +226,6 @@ h1, h2, h3, h4, h5, h6 {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
-}
-
-[data-theme='dark'] .glass-chip, .dark .glass-chip {
-  background-color: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 167, 225, 0.2);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* Ambient colored light blobs (reused behind views) */
@@ -397,17 +338,13 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-gold); }
 html { scrollbar-width: thin; scrollbar-color: var(--bg-tertiary) var(--bg-primary); }
 
-/* ===== Leaflet restyle — OSM tiles tuned to sit naturally in the navy theme ===== */
+/* ===== Leaflet restyle — OSM tiles tuned to sit naturally on the white ground ===== */
 .leaflet-container {
   background: var(--bg-tertiary);
   font-family: var(--font-ui);
 }
 
 .leaflet-tile-pane { filter: saturate(0.55) contrast(0.92) brightness(0.94); }
-
-[data-theme='dark'] .leaflet-tile-pane, .dark .leaflet-tile-pane {
-  filter: saturate(0.5) contrast(1.05) brightness(0.55) hue-rotate(175deg);
-}
 
 .leaflet-popup-content-wrapper {
   background: var(--glass-bg);
@@ -427,20 +364,4 @@ html { scrollbar-width: thin; scrollbar-color: var(--bg-tertiary) var(--bg-prima
   background: var(--glass-bg);
   color: var(--text-primary);
   border-color: var(--glass-border);
-}
-
-/* Keyboard focus visibility — cheap accessibility win */
-:focus-visible {
-  outline: 2px solid var(--accent-gold);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* Respect reduced-motion for all decorative animation */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
 }

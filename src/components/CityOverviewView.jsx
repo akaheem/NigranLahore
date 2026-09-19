@@ -31,7 +31,7 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, s
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
-          <p className="editorial-header-num text-xl">City Overview — Lahore, today</p>
+          <p className="editorial-header-num text-2xl">City Overview — Lahore, today</p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             {zonesHigh} of 8 zones at high risk · {criticalDrains} critical drains ·{' '}
             {risk.rain6hMm != null ? `${risk.rain6hMm.toFixed(1)} mm` : '—'} rain in 6h
@@ -79,7 +79,7 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, s
                 className="font-accent text-[0.65rem] uppercase tracking-[0.15em]"
                 style={{
                   background: hazard === h.id ? 'var(--accent-gold)' : 'transparent',
-                  color: hazard === h.id ? '#fff' : 'var(--text-secondary)',
+                  color: hazard === h.id ? 'var(--on-accent)' : 'var(--text-secondary)',
                   border: '1px solid var(--border-medium)',
                   borderRadius: 999,
                   padding: '0.25rem 0.8rem',

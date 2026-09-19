@@ -32,28 +32,29 @@ export default function CoutureSparkles({ theme }) {
       
       if (!isLarge) {
         // 90% Tiny gold particles (1-2px)
-        size = 1.0 + Math.random() * 1.0; 
-        baseOpacity = 0.08 + Math.random() * 0.04; // 0.08 to 0.12
+        size = 1.0 + Math.random() * 1.0;
+        baseOpacity = 0.26 + Math.random() * 0.10; // 0.26 to 0.36
         type = Math.random() < 0.65 ? 'bokeh' : 'diamond';
       } else {
         // 10% Larger luxury sparkles (3-4px)
         size = 3.0 + Math.random() * 1.0;
-        baseOpacity = 0.10 + Math.random() * 0.03; // 0.10 to 0.13
+        baseOpacity = 0.32 + Math.random() * 0.10; // 0.32 to 0.42
         type = Math.random() < 0.5 ? 'four-point' : 'diamond';
       }
 
-      // Cyan-on-theme sparkle palette
+      // Poster two-tone sparkle palette. The old third colour was ice white,
+      // which is invisible against the white ground.
       const colorRand = Math.random();
       let color;
-      if (colorRand < 0.70) {
-        // Signal Cyan (#04A8E1)
-        color = { r: 4, g: 168, b: 225 };
-      } else if (colorRand < 0.90) {
-        // Light Sky (#60C2EB)
-        color = { r: 96, g: 194, b: 235 };
+      if (colorRand < 0.60) {
+        // Poster azure (#00A7E1)
+        color = { r: 0, g: 167, b: 225 };
+      } else if (colorRand < 0.85) {
+        // Poster grass green (#6DC04A)
+        color = { r: 109, g: 192, b: 74 };
       } else {
-        // Ice White
-        color = { r: 235, g: 247, b: 252 };
+        // Poster sky blue (#5CC0EB)
+        color = { r: 92, g: 192, b: 235 };
       }
 
       return {
@@ -110,10 +111,11 @@ export default function CoutureSparkles({ theme }) {
       ctx.closePath();
       ctx.fill();
 
-      // Micro center point
+      // Micro center point — a denser core of the particle's own colour, so it
+      // stays visible on white (a white core would not).
       ctx.beginPath();
       ctx.arc(cx, cy, size * 0.18, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.95})`;
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${Math.min(1, alpha * 1.7)})`;
       ctx.fill();
     };
 

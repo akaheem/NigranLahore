@@ -35,7 +35,7 @@ function App() {
   const selectedZone = ZONES.find(z => z.id === zoneId) ?? ZONES[0]
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', 'dark')
+    document.documentElement.setAttribute('data-theme', 'light')
   }, [])
 
   useEffect(() => {
@@ -65,7 +65,9 @@ function App() {
     setView('citizen')
   }
 
-  const etherColors = ['#04A8E1', '#60C2EB', '#0B2A3C']
+  // Poster two-tone: azure + green. The old third stop was dark navy (#0B2A3C),
+  // which composites as a grey stain once the ground is white.
+  const etherColors = ['#00A7E1', '#5CC0EB', '#6DC04A']
 
   return (
     <div className="min-h-screen relative overflow-x-hidden">
@@ -73,7 +75,7 @@ function App() {
       {/* 1. Galaxy starfield — deepest layer */}
       <div className="fixed inset-0 -z-20" aria-hidden="true">
         <Suspense fallback={null}>
-          <Galaxy />
+          <Galaxy saturation={0.9} />
         </Suspense>
       </div>
 
@@ -102,9 +104,9 @@ function App() {
         </Suspense>
       </div>
 
-      {/* 3. Mouse-parallax cyan sparkles */}
+      {/* 3. Mouse-parallax azure/green sparkles */}
       <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
-        <CoutureSparkles theme="dark" />
+        <CoutureSparkles theme="light" />
       </div>
 
       {/* 4. Ambient colored light blobs */}
@@ -113,13 +115,13 @@ function App() {
           animate={{ x: [0, 80, -40, 0], y: [0, -60, 50, 0], scale: [1, 1.2, 0.9, 1] }}
           transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
           className="ambient-blob"
-          style={{ top: '12%', left: '18%', width: 350, height: 350, background: 'rgba(4, 168, 225, 0.22)' }}
+          style={{ top: '12%', left: '18%', width: 350, height: 350, background: 'rgba(0, 167, 225, 0.14)' }}
         />
         <motion.div
           animate={{ x: [0, -70, 60, 0], y: [0, 80, -40, 0], scale: [1, 0.9, 1.15, 1] }}
           transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
           className="ambient-blob"
-          style={{ top: '30%', right: '14%', width: 400, height: 400, background: 'rgba(96, 194, 235, 0.16)' }}
+          style={{ top: '30%', right: '14%', width: 400, height: 400, background: 'rgba(109, 192, 74, 0.12)' }}
         />
       </div>
 
@@ -127,7 +129,7 @@ function App() {
       <header className={`fixed top-0 left-0 right-0 w-full z-50 navbar-glass ${scrolled ? 'scrolled' : ''} transition-all duration-300`}>
         <div className="editorial-container flex items-center justify-between" style={{ paddingBlock: '0.85rem' }}>
           <div className="flex items-baseline gap-3">
-            <span className="font-editorial text-3xl" style={{ color: 'var(--accent-gold)' }}>Nigran</span>
+            <span className="font-editorial text-[2rem]" style={{ color: 'var(--accent-gold-dark)', fontWeight: 700, lineHeight: 1.05 }}>Nigran</span>
             <span className="font-accent text-[0.65rem] uppercase tracking-[0.22em]" style={{ color: 'var(--text-muted)' }}>
               Watch over Lahore
             </span>
@@ -143,7 +145,7 @@ function App() {
                   className="font-accent text-[0.68rem] uppercase tracking-[0.15em]"
                   style={{
                     background: view === v.id ? 'var(--accent-gold)' : 'transparent',
-                    color: view === v.id ? '#fff' : 'var(--text-secondary)',
+                    color: view === v.id ? 'var(--on-accent)' : 'var(--text-secondary)',
                     border: '1px solid var(--border-medium)',
                     borderRadius: 999,
                     padding: '0.35rem 1rem',

@@ -27,7 +27,7 @@ Full parameter inventory with inline citations lives in `src/data/calibration.js
 ## Stack
 
 - React 19 + Vite 8 (Rolldown-powered)
-- Tailwind CSS + a luxury editorial design system (dark-only — the fixed dark theme is itself E2E-tested)
+- Tailwind CSS + a luxury editorial design system (light-only, in the hackathon's own palette — the poster's grass green `#6DC04A` on white as the interactive accent, with its sky blue kept in the atmospheric background layers; every colour was measured from the event poster, and the fixed theme is itself E2E-tested)
 - Leaflet + react-leaflet for the zone map
 - No backend — pure client-side; deployable to any static host (Vercel config included)
 - The three decorative WebGL/particle background layers (`three`, `ogl`) are code-split behind `React.lazy` + `Suspense` so they never delay first paint — the map, the risk engine and every data path work with all three disabled

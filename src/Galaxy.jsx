@@ -97,14 +97,15 @@ vec3 StarLayer(vec2 uv) {
 
       vec3 base;
       if (seed < 0.65) {
-        // Signal Cyan (#04A8E1)
-        base = vec3(0.016, 0.659, 0.882);
+        // Poster azure (#00A7E1)
+        base = vec3(0.0, 0.655, 0.882);
       } else if (seed < 0.90) {
-        // Ice White
-        base = vec3(0.92, 0.97, 0.99);
+        // Poster grass green (#6DC04A) — replaces the ice-white branch, which
+        // was invisible once the ground became white.
+        base = vec3(0.427, 0.753, 0.290);
       } else {
-        // Sky Blue accent
-        base = vec3(0.38, 0.76, 0.92);
+        // Poster sky blue (#5CC0EB)
+        base = vec3(0.361, 0.753, 0.922);
       }
       
       // Control saturation dynamically through the uniform

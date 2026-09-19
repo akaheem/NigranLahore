@@ -110,7 +110,11 @@ export default function CityOverviewView({ risk, done, onOpenZone, onNavigate, s
             </button>
           </div>
         </div>
-        <div style={{ flex: 1, minHeight: 380 }}>
+        {/* An explicit height, not `flex: 1`. The card's height here is
+            content-derived (min-height only, no stretched grid row to resolve
+            against), so a flex item's height is indefinite and the map's
+            `height: 100%` computes to zero — Leaflet then draws nothing. */}
+        <div style={{ height: 420 }}>
           <CityMap
             zoneScores={risk.zoneScores}
             hazard={hazard}

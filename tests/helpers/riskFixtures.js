@@ -24,6 +24,14 @@ export const liveAir = {
 
 export const liveHeat = { score: 55, band: 'moderate', parts: { temp: 27, humidity: 33 }, missing: { temp: false, humidity: false } }
 
+/** Waste & drainage card for the Shahdara fixture zone (worst drain = d1). */
+export const liveDrain = {
+  score: 73,
+  parts: { blockage: 83, capacity: 62, unserved: 72, waste: 63 },
+  missing: { blockage: false, capacity: false, unserved: false, waste: false },
+  worstDrain: DRAIN_NODES.find(n => n.zone === 'shahdara'),
+}
+
 function buildZoneScores() {
   const out = {}
   for (const z of ZONES) out[z.id] = { score: Math.round(z.floodHistory * 100), parts: { rain: 30, blockage: 60, history: Math.round(z.floodHistory * 100), vulnerability: Math.round(z.vulnerability * 100) }, missing: { rain: false, blockage: false, history: false, vulnerability: false } }
@@ -52,6 +60,7 @@ export function buildRisk(overrides = {}) {
     weather: liveWeather,
     air: liveAir,
     heat: liveHeat,
+    drainCard: liveDrain,
     rain6hMm: 12,
     rainNowMm: 0,
     status: 'live',

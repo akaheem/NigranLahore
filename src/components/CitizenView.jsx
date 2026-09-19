@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react'
 import CityMap from './CityMap.jsx'
 import RiskCard from './RiskCard.jsx'
 import { RainTimeline } from './Timeline24h.jsx'
-import { ZONES } from '../data/lahore.js'
+import { ZONES, COOL_ASSETS } from '../data/lahore.js'
 import { RECORDS, TELEMETRY_NOTE } from '../data/calibration.js'
-import { bandColor, airWhy, heatWhy } from '../lib/risk.js'
+import { bandColor, airWhy, heatWhy, drainWhy } from '../lib/risk.js'
+import { haversineKm, nearestBy, walkMinutes } from '../lib/geo.js'
 
 const aqiBand = aqi =>
   aqi <= 50 ? { c: 'var(--risk-safe)', l: 'Good' } :
@@ -12,21 +13,22 @@ const aqiBand = aqi =>
   aqi <= 150 ? { c: 'var(--risk-high)', l: 'Unhealthy (sensitive)' } :
   { c: 'var(--risk-severe)', l: 'Unhealthy+' }
 
-function haversineKm(a, b) {
-  const R = 6371
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180
-  const lat1 = (a.lat * Math.PI) / 180
-  const lat2 = (b.lat * Math.PI) / 180
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2
-  return 2 * R * Math.asin(Math.sqrt(h))
-}
+const ASSET_EMOJI = { water: '💧', camp: '⛺', hospital: '🏥' }
+const ASSET_LABEL = { water: 'Drinking water', camp: 'Relief camp', hospital: 'Heat unit' }
 
 export default function CitizenView({ risk, selectedZone, onSelectZone, showCool, onToggleCool, onSwitch, servicedIds = [] }) {
   const [locateMsg, setLocateMsg] = useState(null)
 
   const zoneScore = risk.zoneScores[selectedZone.id]?.score ?? 0
   const whys = risk.floodWhyFor(selectedZone)
+  const drainCard = risk.drainCard ?? { score: 0, parts: {}, missing: {} }
+
+  // Nearest relief, measured from the zone the citizen already picked — not
+  // from the map centre, so the distances mean something to a real person.
+  const nearestRelief = useMemo(
+    () => nearestBy(selectedZone, COOL_ASSETS, 3),
+    [selectedZone],
+  )
 
   const locateMe = () => {
     if (!navigator.geolocation) {
@@ -207,6 +209,53 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
               />
             </div>
           </div>
+
+          {/* Nearest relief — water plants, camps and heat units, ranked by
+              walking distance from the selected zone. */}
+          <div className="lux-card-glass">
+            <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>
+              Nearest relief from {selectedZone.name}
+            </p>
+            <div className="mt-3" style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+              {nearestRelief.map(a => (
+                <div key={a.id} className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2">
+                    <span aria-hidden="true">{ASSET_EMOJI[a.type] || '📍'}</span>
+                    <div>
+                      <p className="text-[0.82rem] leading-snug" style={{ color: 'var(--text-secondary)' }}>{a.name}</p>
+                      <p className="text-[0.68rem]" style={{ color: 'var(--text-muted)' }}>
+                        {ASSET_LABEL[a.type] || 'Relief'} · {a.capacity.toLocaleString()} people/day
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-editorial text-xl" style={{ color: 'var(--accent-gold)' }}>{a.distanceKm.toFixed(1)}<span className="text-xs"> km</span></p>
+                    <p className="text-[0.62rem]" style={{ color: 'var(--text-muted)' }}>
+                      ~{walkMinutes(a.distanceKm)} min walk
+                    </p>
+                    <a
+                      href={`https://www.google.com/maps?q=${a.lat},${a.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-accent text-[0.62rem] uppercase tracking-[0.12em]"
+                      style={{ color: 'var(--accent-gold)' }}
+                    >
+                      Navigate ↗
+                    </a>
+                  </div>
+                </div>
+              ))}
+              {nearestRelief.length === 0 && (
+                <p className="text-[0.78rem]" style={{ color: 'var(--text-muted)' }}>
+                  No relief assets mapped near this zone.
+                </p>
+              )}
+            </div>
+            <p className="mt-3 text-[0.62rem]" style={{ color: 'var(--text-muted)' }}>
+              Distances are straight-line from the zone centre, not routing. Facility list is a reference set,
+              not live municipal capacity. Walk time assumes 4.5 km/h.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -221,8 +270,8 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
         />
       </div>
 
-      {/* Multi-hazard — air + heat (the selected zone's own live feed) */}
-      <div className="mt-6 grid md:grid-cols-2 gap-4">
+      {/* Multi-hazard — air + heat + waste/drain (the selected zone's own feed) */}
+      <div className="mt-6 grid md:grid-cols-3 gap-4">
         <RiskCard
           num="III"
           title={`Air quality — ${selectedZone.name}`}
@@ -237,11 +286,18 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
           whys={heatWhy(risk.heat ?? {}, risk.weather ?? {})}
           footer="Live temperature + humidity from Open-Meteo; humid-heat banding; heatwave advisories trigger above 40°C in the Lahore plan."
         />
+        <RiskCard
+          num="V"
+          title={`Waste & drainage — ${selectedZone.name}`}
+          score={drainCard.score ?? 0}
+          whys={drainWhy(drainCard, { zone: selectedZone })}
+          footer="Drain fill is a calibrated simulation; drainage capacity and waste load come from published Lahore parameters."
+        />
       </div>
 
       {/* Records strip */}
       <div className="mt-10">
-        <p className="editorial-header-num text-xl mb-4">V — The city, lately</p>
+        <p className="editorial-header-num text-xl mb-4">VI — The city, lately</p>
         <div className="grid md:grid-cols-5 gap-4">
           {RECORDS.map((r, i) => (
             <div key={i} className="lux-card-glass" style={{ padding: '1rem 1.1rem' }}>

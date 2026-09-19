@@ -1,15 +1,19 @@
 import { useState } from 'react'
 import CityMap from './CityMap.jsx'
 import { DISPATCH_CITATION, SORE_POINT_FACT } from '../data/calibration.js'
+import { CREWS, CREW_NOTE, crewLoads, suggestCrewFor } from '../data/crews.js'
 import { bandColor } from '../lib/risk.js'
-import { CheckCircle2, AlertTriangle, Clock } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, Clock, Users } from 'lucide-react'
 
-export default function FieldOpsView({ risk, done, onComplete, onSwitch, servicedIds = [], selectedZone, onSelectZone, onSelectDrain }) {
+export default function FieldOpsView({ risk, done, onComplete, onSwitch, servicedIds = [], selectedZone, onSelectZone, onSelectDrain, assignments = {}, onAssign }) {
   const [selectedTask, setSelectedTask] = useState(null)
 
   const queue = risk.taskQueue
   const openTasks = queue.filter(t => !done[t.id])
   const topTask = openTasks[0]
+
+  // Per-crew load: only OPEN tasks count against a shift's capacity.
+  const loads = crewLoads(openTasks.map(t => t.id), assignments)
 
   const complete = (id) => {
     onComplete(id)
@@ -59,6 +63,8 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch, service
             const refillNote = isDone && t.servicedAt
               ? `serviced ${t.lastServiceHrs === 0 ? 'just now' : `${t.lastServiceHrs}h ago`} — refilling`
               : null
+            const assignedCrew = assignments[t.id] ? CREWS.find(c => c.id === assignments[t.id]) : null
+            const suggested = suggestCrewFor(t)
             return (
               <div
                 key={t.id}
@@ -88,6 +94,7 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch, service
                       </p>
                       <p className="text-[0.72rem] mt-0.5" style={{ color: 'var(--text-muted)' }}>
                         {t.zoneName} · fill {t.fillPct}% (live model){refillNote ?? ` · unserved ${t.lastServiceHrs}h`}
+                        {assignedCrew && !isDone && <> · {assignedCrew.name}</>}
                       </p>
                     </div>
                   </div>
@@ -104,6 +111,58 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch, service
                     <p className="text-[0.8rem] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                       <strong style={{ color: 'var(--accent-gold)' }}>Why now:</strong> {reasonFor(t)}
                     </p>
+
+                    {/* Crew assignment — the step between "this drain matters"
+                        and "someone is going". Suggested crew = nearest depot. */}
+                    <div className="mt-3">
+                      <label
+                        className="font-accent text-[0.6rem] uppercase tracking-[0.15em]"
+                        style={{ color: 'var(--text-muted)' }}
+                        htmlFor={`crew-${t.id}`}
+                      >
+                        Assign crew
+                      </label>
+                      <select
+                        id={`crew-${t.id}`}
+                        value={assignments[t.id] ?? ''}
+                        onChange={e => onAssign?.(t.id, e.target.value)}
+                        className="mt-1 w-full font-accent text-[0.75rem]"
+                        style={{
+                          background: 'var(--bg-tertiary)',
+                          color: 'var(--text-primary)',
+                          border: '1px solid var(--border-medium)',
+                          borderRadius: 8,
+                          padding: '0.45rem 0.7rem',
+                          outline: 'none',
+                        }}
+                      >
+                        <option value="">Unassigned</option>
+                        {CREWS.map(c => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} — {loads[c.id]?.length ?? 0}/{c.capacityPerShift} · {c.depot}
+                          </option>
+                        ))}
+                      </select>
+                      {suggested && assignments[t.id] !== suggested.id && (
+                        <p className="mt-1.5 text-[0.65rem]" style={{ color: 'var(--text-muted)' }}>
+                          Suggested: {suggested.name} — nearest depot.{' '}
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onAssign?.(t.id, suggested.id) }}
+                            className="font-accent uppercase tracking-[0.12em]"
+                            style={{ background: 'none', border: 'none', color: 'var(--accent-gold)', cursor: 'pointer', padding: 0 }}
+                          >
+                            Assign
+                          </button>
+                        </p>
+                      )}
+                      {assignedCrew && (
+                        <p className="mt-1.5 text-[0.65rem]" style={{ color: 'var(--text-muted)' }}>
+                          {assignedCrew.name} · {assignedCrew.shift} · depot {assignedCrew.depot}
+                        </p>
+                      )}
+                    </div>
+
                     <div className="flex gap-2 mt-3">
                       <button type="button" className="btn-lux" style={{ padding: '0.5rem 1.1rem', fontSize: '0.7rem' }} onClick={(e) => { e.stopPropagation(); complete(t.id) }}>
                         <span>Mark serviced (demo)</span>
@@ -117,6 +176,44 @@ export default function FieldOpsView({ risk, done, onComplete, onSwitch, service
               </div>
             )
           })}
+
+          {/* Crew roster — who is being sent, and how loaded they already are */}
+          <div className="lux-card-glass" style={{ padding: '1.1rem 1.3rem' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <Users size={15} color="var(--accent-gold)" />
+              <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>
+                Crew roster — today's shift
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+              {CREWS.map(c => {
+                const load = loads[c.id]?.length ?? 0
+                const over = load > c.capacityPerShift
+                return (
+                  <div key={c.id} className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[0.82rem]" style={{ color: 'var(--text-secondary)' }}>{c.name}</p>
+                      <p className="text-[0.66rem]" style={{ color: 'var(--text-muted)' }}>
+                        {c.depot} · {c.shift}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p
+                        className="font-editorial text-2xl"
+                        style={{ color: over ? 'var(--risk-high)' : load > 0 ? 'var(--accent-gold)' : 'var(--text-muted)' }}
+                      >
+                        {load}<span className="text-sm">/{c.capacityPerShift}</span>
+                      </p>
+                      <p className="text-[0.6rem] uppercase tracking-[0.12em] font-accent" style={{ color: over ? 'var(--risk-high)' : 'var(--text-muted)' }}>
+                        {over ? 'Over capacity' : 'tasks'}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="mt-3 text-[0.62rem]" style={{ color: 'var(--text-muted)' }}>{CREW_NOTE}</p>
+          </div>
         </div>
 
         {/* Map + stats */}

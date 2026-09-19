@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   RAIN_BANDS, bandOf, bandColor, bandLabel,
   rainScore, blockageScore, floodRisk, heatRisk, airRisk, taskPriority,
-  floodWhy, airWhy, heatWhy,
+  floodWhy, airWhy, heatWhy, drainRisk, drainWhy,
 } from '../../src/lib/risk.js'
 import { ZONES, DRAIN_NODES } from '../../src/data/lahore.js'
 
@@ -158,5 +158,111 @@ describe('floodWhy / airWhy / heatWhy', () => {
 describe('RAIN_BANDS calibration', () => {
   it('matches the documented thresholds', () => {
     expect(RAIN_BANDS.map(b => b.max)).toEqual([5, 15, 30, Infinity])
+  })
+})
+
+describe('drainRisk', () => {
+  it('composes the planned 45/25/15/15 weights', () => {
+    const zone = { id: 'z', drainageCapacity: 0, population: 300000 }
+    const node = { zone: 'z', fillPct: 100, lastServiceHrs: 72 }
+    const r = drainRisk({ zone, drainNodes: [node] })
+    expect(r.score).toBe(100)
+    expect(r.parts).toEqual({ blockage: 100, capacity: 100, unserved: 100, waste: 100 })
+  })
+
+  it('scores Shahdara off its own trunk drain', () => {
+    // d1: 87% full, unserved 52h → blockage 83; capacity deficit 1−0.38 = 62;
+    // unserved 52/72 = 72; waste 190k against the 300k reference = 63.
+    const r = drainRisk({ zone: shahdara, drainNodes: DRAIN_NODES })
+    expect(r.parts).toEqual({ blockage: 83, capacity: 62, unserved: 72, waste: 63 })
+    expect(r.score).toBe(73)
+    expect(r.worstDrain.id).toBe('d1')
+    expect(r.missing).toEqual({ blockage: false, capacity: false, unserved: false, waste: false })
+  })
+
+  it('renormalizes to telemetry-only when a zone has no drain node', () => {
+    const zone = { id: 'z', drainageCapacity: 0.2, population: 150000 }
+    const r = drainRisk({ zone, drainNodes: [] })
+    expect(r.missing).toEqual({ blockage: true, capacity: false, unserved: true, waste: false })
+    // (0.25·0.8 + 0.15·0.5) / 0.40 = 0.6875 — NOT the 0.275 a zeroed
+    // blockage would have produced had the weights stayed at a full 1.0.
+    expect(r.score).toBe(69)
+    expect(r.score).toBeGreaterThan(Math.round(100 * (0.25 * 0.8 + 0.15 * 0.5)))
+    expect(r.worstDrain).toBe(null)
+  })
+
+  it('treats a missing drainNodes list the same as an empty one', () => {
+    const zone = { id: 'z', drainageCapacity: 0.2, population: 150000 }
+    expect(drainRisk({ zone }).score).toBe(drainRisk({ zone, drainNodes: [] }).score)
+    expect(drainRisk({ zone }).missing.blockage).toBe(true)
+  })
+
+  it('lets the worst drain drive the score, not the average', () => {
+    const clear = { id: 'clear', zone: 'shahdara', fillPct: 5, lastServiceHrs: 1 }
+    const withClear = drainRisk({ zone: shahdara, drainNodes: [clear, ...DRAIN_NODES] })
+    expect(withClear.score).toBe(drainRisk({ zone: shahdara, drainNodes: DRAIN_NODES }).score)
+  })
+
+  it('keeps every score inside 0–100 across the real zones', () => {
+    for (const z of ZONES) {
+      const r = drainRisk({ zone: z, drainNodes: DRAIN_NODES })
+      expect(r.score).toBeGreaterThanOrEqual(0)
+      expect(r.score).toBeLessThanOrEqual(100)
+      for (const part of Object.values(r.parts)) {
+        expect(part).toBeGreaterThanOrEqual(0)
+        expect(part).toBeLessThanOrEqual(100)
+      }
+    }
+  })
+
+  it('ranks Shahdara above DHA, matching the calibrated capacities', () => {
+    const dha = ZONES.find(z => z.id === 'dha')
+    const shahdaraR = drainRisk({ zone: shahdara, drainNodes: DRAIN_NODES })
+    const dhaR = drainRisk({ zone: dha, drainNodes: DRAIN_NODES })
+    expect(shahdaraR.score).toBeGreaterThan(dhaR.score)
+    expect(dhaR.parts.blockage).toBe(28) // 35% full, 8h unserved
+  })
+
+  it('is null-safe for a missing or unidentified zone', () => {
+    for (const input of [undefined, {}, { zone: null }, { zone: {} }, { drainNodes: DRAIN_NODES }]) {
+      const r = drainRisk(input)
+      expect(r.score).toBe(0)
+      expect(r.missing.zone).toBe(true)
+      expect(r.parts).toEqual({})
+    }
+  })
+
+  it('is null-safe with no arguments at all', () => {
+    expect(drainRisk().score).toBe(0)
+    expect(drainRisk({ zone: shahdara }).missing.capacity).toBe(false)
+  })
+})
+
+describe('drainWhy', () => {
+  it('explains a high-blockage zone', () => {
+    const result = drainRisk({ zone: shahdara, drainNodes: DRAIN_NODES })
+    const whys = drainWhy(result, { zone: shahdara })
+    expect(whys.some(w => w.includes('Drain D-1'))).toBe(true)
+    expect(whys.some(w => w.includes('design-storm capacity'))).toBe(true)
+    expect(whys.some(w => w.includes('service interval'))).toBe(true)
+    expect(whys.some(w => w.includes('waste load'))).toBe(true)
+  })
+
+  it('flags a zone with no drain telemetry instead of reading as safe', () => {
+    const zone = { id: 'z', name: 'Test Zone', drainageCapacity: 0.2, population: 150000 }
+    const whys = drainWhy(drainRisk({ zone, drainNodes: [] }), { zone })
+    expect(whys[0]).toContain('No drain telemetry')
+  })
+
+  it('says nothing alarming about a well-serviced drain', () => {
+    const zone = { id: 'z', name: 'Test Zone', drainageCapacity: 0.9, population: 50000 }
+    const node = { zone: 'z', name: 'Drain Z-1', fillPct: 10, lastServiceHrs: 2 }
+    const whys = drainWhy(drainRisk({ zone, drainNodes: [node] }), { zone })
+    expect(whys).toEqual(['Drain Z-1 is holding at 10% — nothing critical yet'])
+  })
+
+  it('handles a missing zone', () => {
+    expect(drainWhy(drainRisk(), {})).toEqual(['No zone selected'])
+    expect(drainWhy()).toEqual(['No zone selected'])
   })
 })

@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { useLahoreData } from '../hooks/useLahoreData.js'
 import { ZONES, DRAIN_NODES } from '../data/lahore.js'
 import { applyLiveTelemetry } from '../data/telemetry.js'
-import { floodRisk, heatRisk, airRisk, blockageScore, taskPriority, floodWhy } from '../lib/risk.js'
+import { floodRisk, heatRisk, airRisk, blockageScore, taskPriority, floodWhy, drainRisk } from '../lib/risk.js'
 
 /**
  * Central derived-state hook: live data + static geo + risk engine →
@@ -80,6 +80,14 @@ export function useCityRisk(doneMap = {}, doneAtMap = {}, selectedZoneId = null)
     [zWeather],
   )
 
+  // Waste & drainage — the selected zone's drain telemetry + static capacity.
+  // Null zone → the engine flags it rather than scoring a phantom area.
+  const activeZone = useMemo(() => ZONES.find(z => z.id === selectedZoneId) ?? null, [selectedZoneId])
+  const drainCard = useMemo(
+    () => drainRisk({ zone: activeZone, drainNodes }),
+    [activeZone, drainNodes],
+  )
+
   const taskQueue = useMemo(() => {
     const tasks = drainNodes.map(n => {
       const zone = ZONES.find(z => z.id === n.zone)
@@ -107,7 +115,7 @@ export function useCityRisk(doneMap = {}, doneAtMap = {}, selectedZoneId = null)
   }, [zoneWeather, weather, drainNodes, doneMap, doneAtMap])
 
   return {
-    weather: zWeather, air: airCard, heat,
+    weather: zWeather, air: airCard, heat, drainCard,
     rain6hMm, rainNowMm,
     zoneTempC: zWeather?.tempC ?? null,
     zoneHumidityPct: zWeather?.humidityPct ?? null,

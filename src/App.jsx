@@ -1,15 +1,20 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, lazy, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Galaxy from './Galaxy.jsx'
-import LiquidEther from './components/LiquidEther.jsx'
-import CoutureSparkles from './components/CoutureSparkles.jsx'
 import CitizenView from './components/CitizenView.jsx'
 import FieldOpsView from './components/FieldOpsView.jsx'
 import CityOverviewView from './components/CityOverviewView.jsx'
 import DataStatus from './components/DataStatus.jsx'
+import CoutureSparkles from './components/CoutureSparkles.jsx'
 import { useCityRisk } from './hooks/useCityRisk.js'
 import { useLocalStorageState } from './hooks/useLocalStorageState.js'
 import { ZONES } from './data/lahore.js'
+
+// Decorative background layers, split out of the main bundle. They pull in
+// `ogl` and `three` — by far the heaviest dependencies — and none of them is
+// load-bearing: the map, the risk engine and every data path work without them.
+// Deferring them keeps the first paint fast on a phone with a slow connection.
+const Galaxy = lazy(() => import('./Galaxy.jsx'))
+const LiquidEther = lazy(() => import('./components/LiquidEther.jsx'))
 
 const NAV = [
   { id: 'citizen', label: 'Citizen' },
@@ -23,6 +28,7 @@ function App() {
   const [showCool, setShowCool] = useLocalStorageState('nigran-cool', true)
   const [done, setDone] = useLocalStorageState('nigran-done', {})
   const [doneAt, setDoneAt] = useLocalStorageState('nigran-done-at', {})
+  const [assignments, setAssignments] = useLocalStorageState('nigran-crews', {})
   const [scrolled, setScrolled] = useState(false)
 
   const risk = useCityRisk(done, doneAt, zoneId)
@@ -43,6 +49,16 @@ function App() {
     setDone(d => ({ ...d, [id]: true }))
     setDoneAt(a => ({ ...a, [id]: at }))
   }
+  // Assigning a drain to a crew. Passing a falsy crewId clears the assignment,
+  // so "unassign" is the same call as "assign to nobody".
+  const onAssign = (drainId, crewId) => {
+    setAssignments(a => {
+      const next = { ...a }
+      if (crewId) next[drainId] = crewId
+      else delete next[drainId]
+      return next
+    })
+  }
   const doneIds = useMemo(() => Object.keys(done).filter(k => done[k]), [done])
   const onOpenZone = (id) => {
     setZoneId(id)
@@ -56,7 +72,9 @@ function App() {
       {/* ===== Layered atmosphere (sample-faithful stack) ===== */}
       {/* 1. Galaxy starfield — deepest layer */}
       <div className="fixed inset-0 -z-20" aria-hidden="true">
-        <Galaxy />
+        <Suspense fallback={null}>
+          <Galaxy />
+        </Suspense>
       </div>
 
       {/* 2. LiquidEther mouse-reactive fluid — the sample's signature background */}
@@ -65,21 +83,23 @@ function App() {
         aria-hidden="true"
         style={{ opacity: 0.5 }}
       >
-        <LiquidEther
-          colors={etherColors}
-          mouseForce={15}
-          cursorSize={70}
-          isViscous={false}
-          iterationsPoisson={8}
-          resolution={0.25}
-          isBounce={false}
-          autoDemo
-          autoSpeed={0.35}
-          autoIntensity={2.0}
-          takeoverDuration={0.25}
-          autoResumeDelay={3000}
-          autoRampDuration={0.6}
-        />
+        <Suspense fallback={null}>
+          <LiquidEther
+            colors={etherColors}
+            mouseForce={15}
+            cursorSize={70}
+            isViscous={false}
+            iterationsPoisson={8}
+            resolution={0.25}
+            isBounce={false}
+            autoDemo
+            autoSpeed={0.35}
+            autoIntensity={2.0}
+            takeoverDuration={0.25}
+            autoResumeDelay={3000}
+            autoRampDuration={0.6}
+          />
+        </Suspense>
       </div>
 
       {/* 3. Mouse-parallax cyan sparkles */}
@@ -163,6 +183,8 @@ function App() {
                 risk={risk}
                 done={done}
                 onComplete={onComplete}
+                assignments={assignments}
+                onAssign={onAssign}
                 onSwitch={() => setView('citizen')}
                 servicedIds={doneIds}
                 selectedZone={selectedZone}

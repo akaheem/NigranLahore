@@ -62,6 +62,31 @@ describe('useCityRisk', () => {
   })
 })
 
+describe('useCityRisk drain card', () => {
+  it('flags a missing selected zone instead of scoring a phantom one', () => {
+    const { result } = renderHook(() => useCityRisk())
+    expect(result.current.drainCard.score).toBe(0)
+    expect(result.current.drainCard.missing.zone).toBe(true)
+  })
+
+  it('scores the selected zone off its own drain telemetry', () => {
+    const { result } = renderHook(() => useCityRisk({}, {}, 'shahdara'))
+    const { drainCard } = result.current
+    expect(drainCard.worstDrain.zone).toBe('shahdara')
+    expect(drainCard.missing.blockage).toBe(false)
+    expect(drainCard.parts.capacity).toBe(62) // 1 − Shahdara's 0.38 design-storm share
+    expect(drainCard.score).toBeGreaterThan(0)
+  })
+
+  it('follows the selection when the zone changes', () => {
+    const dha = renderHook(() => useCityRisk({}, {}, 'dha')).result.current.drainCard
+    const shahdara = renderHook(() => useCityRisk({}, {}, 'shahdara')).result.current.drainCard
+    expect(dha.worstDrain.zone).toBe('dha')
+    expect(dha.parts.capacity).toBe(20) // 1 − 0.80
+    expect(shahdara.score).toBeGreaterThan(dha.score)
+  })
+})
+
 describe('applyServicedState', () => {
   it('zeroes a serviced node (fillPct 5, lastServiceHrs 0) and leaves others untouched', () => {
     const out = applyServicedState(DRAIN_NODES, { d1: true })

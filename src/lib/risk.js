@@ -4,6 +4,8 @@
  * PROJECT_PLAN.md §5). Scores are 0-100; bands: safe/moderate/high/severe.
  */
 
+import { WASTE } from '../data/calibration.js'
+
 export const BANDS = [
   { max: 25, key: 'safe', label: 'Safe' },
   { max: 50, key: 'moderate', label: 'Moderate' },
@@ -88,6 +90,87 @@ export function airRisk({ usAqi, pm25 } = {}) {
   const aqi = suppliedAqi ?? Math.round(suppliedPm * 1.9)
   const score = Math.min(100, Math.round(aqi / 3))
   return { score, band: bandOf(score).key, aqi, parts: { aqi }, missing: false }
+}
+
+/**
+ * Waste & drainage risk (0-100) for one zone — the fourth hazard, alongside
+ * flood / air / heat. Weights are published in PROJECT_PLAN.md §5 and follow
+ * the same renormalize-when-missing contract as floodRisk: an input that is
+ * absent is dropped from both the numerator and the denominator, so a zone
+ * with no drain node is never silently scored "safe".
+ *
+ *   drain = 0.45 × worst_blockage     (worst drain's blockage in the zone)
+ *         + 0.25 × capacity_deficit   (1 - drainageCapacity, from lahore.js)
+ *         + 0.15 × unserved           (worst drain's lastServiceHrs / 72)
+ *         + 0.15 × waste_load         (population × WASTE.kgPerCapPerDay)
+ */
+export function drainRisk({ zone, drainNodes } = {}) {
+  if (!zone || zone.id == null) return { score: 0, parts: {}, missing: { zone: true } }
+
+  const zoneNodes = (drainNodes || []).filter(n => n.zone === zone.id)
+  const blockagePresent = zoneNodes.length > 0
+  // The zone's weakest link drives the score — a trunk drain at 90% is the
+  // risk, not the average of it and a clear one.
+  const worst = blockagePresent
+    ? zoneNodes.reduce((a, b) => (blockageScore(a) >= blockageScore(b) ? a : b))
+    : null
+  const blockage = blockagePresent ? blockageScore(worst) / 100 : 0
+  const unservedPresent = worst != null && numberOrNull(worst.lastServiceHrs) != null
+  const unserved = unservedPresent ? clamp01(worst.lastServiceHrs / 72) : 0
+  const capacityPresent = numberOrNull(zone.drainageCapacity) != null
+  const capacityDeficit = capacityPresent ? clamp01(1 - zone.drainageCapacity) : 0
+  const wastePresent = numberOrNull(zone.population) != null
+  // 0.84 kg/cap/day (Batool & Ch 2009) against a 300k-resident reference zone
+  const wasteLoad = wastePresent ? clamp01((zone.population * WASTE.kgPerCapPerDay) / (300000 * WASTE.kgPerCapPerDay)) : 0
+
+  const weights = {
+    blockage: blockagePresent ? 0.45 : 0,
+    capacity: capacityPresent ? 0.25 : 0,
+    unserved: unservedPresent ? 0.15 : 0,
+    waste: wastePresent ? 0.15 : 0,
+  }
+  const total = Object.values(weights).reduce((sum, value) => sum + value, 0) || 1
+  const composite = (
+    weights.blockage * blockage
+    + weights.capacity * capacityDeficit
+    + weights.unserved * unserved
+    + weights.waste * wasteLoad
+  ) / total
+
+  return {
+    score: Math.round(100 * composite),
+    parts: {
+      blockage: Math.round(100 * blockage),
+      capacity: Math.round(100 * capacityDeficit),
+      unserved: Math.round(100 * unserved),
+      waste: Math.round(100 * wasteLoad),
+    },
+    missing: {
+      blockage: !blockagePresent,
+      capacity: !capacityPresent,
+      unserved: !unservedPresent,
+      waste: !wastePresent,
+    },
+    worstDrain: worst,
+  }
+}
+
+export function drainWhy(result = {}, { zone = {} } = {}) {
+  if (!result.parts || result.missing?.zone) return ['No zone selected']
+  const whys = []
+  const p = result.parts || {}
+  const worst = result.worstDrain
+  if (result.missing?.blockage) {
+    whys.push('No drain telemetry is mapped to this zone — scoring on drainage capacity alone')
+  } else if (worst && p.blockage >= 60) {
+    whys.push(`${worst.name} is ${worst.fillPct ?? '—'}% full and unserved for ${worst.lastServiceHrs ?? '—'}h`)
+  } else if (worst) {
+    whys.push(`${worst.name} is holding at ${worst.fillPct ?? '—'}% — nothing critical yet`)
+  }
+  if (p.capacity >= 60) whys.push(`${zone.name || 'This zone'} drains at only ${Math.round((zone.drainageCapacity ?? 0) * 100)}% of its design-storm capacity`)
+  if (p.unserved >= 50) whys.push('This drain has gone well past its routine service interval')
+  if (p.waste >= 60) whys.push(`Dense waste load — ~${WASTE.kgPerCapPerDay} kg per person per day, and only ~${Math.round(WASTE.collectionRate * 100)}% is collected`)
+  return whys
 }
 
 export function taskPriority(node = {}, zone = {}, rain6hMm) {

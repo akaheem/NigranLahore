@@ -60,6 +60,16 @@ export function suggestCrewFor(zone, crews = CREWS) {
   return nearestBy(zone, crews, 1)[0] ?? null
 }
 
+/**
+ * A crew's display name from the id recorded on a status event.
+ *
+ * Returns the id itself when it is not in the roster, rather than null. A
+ * complaint board can be read from a device whose build predates a roster
+ * change, and "crew-4" is a worse thing to read than "Crew Delta" but a far
+ * better one than a blank where the name of whoever moved a report should be.
+ */
+export const crewName = (id) => CREWS.find(c => c.id === id)?.name ?? id
+
 /** Task load per crew: open (unserviced) task ids grouped by crewId. */
 export function crewLoads(openTaskIds = [], assignments = {}) {
   const out = {}

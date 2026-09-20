@@ -1,0 +1,24 @@
+{
+  "name": "nigran-service-log",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Shared drain service log for the Nigran Lahore prototype",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "start:local": "node --env-file=.env src/index.js",
+    "dev:local": "node --watch --env-file=.env src/index.js",
+    "smoke": "node scripts/smoke.mjs",
+    "test": "node --test \"src/**/*.test.js\""
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "pg": "^8.11.5"
+  }
+}

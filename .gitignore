@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Environment — server/README.md and server/.env.example both instruct
+# `cp .env.example .env`, so the file this workflow creates must never be
+# committed. `.env.*` would swallow the template, hence the negation.
+.env
+.env.*
+!.env.example
+
 # Test artifacts
 test-results/
 playwright-report/

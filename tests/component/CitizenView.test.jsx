@@ -77,6 +77,44 @@ describe('CitizenView', () => {
   })
 })
 
+/**
+ * The hero is the one element on this screen that has to land in the first
+ * second: a bare score tells a reader nothing about whether 82 is near the top
+ * of the scale or barely past the middle. These pin the two things that answer
+ * that — the band word and the meter — and the constraint the rest of the suite
+ * depends on, that the 6xl figure holds the number and nothing else.
+ */
+describe('CitizenView — hero score block', () => {
+  const hero = () => screen.getByText('Your area').closest('.lux-card-glass')
+
+  it('names the band beside the score', () => {
+    renderView() // Shahdara scores 92 → Severe
+    expect(within(hero()).getByText('Severe')).toBeInTheDocument()
+  })
+
+  it('places the score on the 0-100 ramp', () => {
+    renderView()
+    const meter = within(hero()).getByRole('meter')
+    expect(meter).toHaveAttribute('aria-valuenow', '92')
+    expect(meter).toHaveAccessibleName('92 of 100, Severe band')
+  })
+
+  it('tracks the band as the score moves', () => {
+    renderView(buildRisk({ zoneScores: { shahdara: { score: 18 } } }))
+    const meter = within(hero()).getByRole('meter')
+    expect(meter).toHaveAttribute('aria-valuenow', '18')
+    expect(meter).toHaveAccessibleName('18 of 100, Safe band')
+    expect(within(hero()).getByText('Safe')).toBeInTheDocument()
+  })
+
+  it('keeps the unit outside the 6xl figure so the figure is the bare number', () => {
+    renderView()
+    const scoreEl = document.querySelector('.font-editorial.text-6xl')
+    expect(scoreEl.textContent).toBe('92')
+    expect(within(hero()).getByText('flood risk /100')).toBeInTheDocument()
+  })
+})
+
 describe('CitizenView — nearest relief', () => {
   const panel = () => screen.getByText(/Nearest relief from Shahdara/i).closest('.lux-card-glass')
 

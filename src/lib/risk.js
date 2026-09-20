@@ -1,10 +1,11 @@
 /**
  * Nigran risk engine — deterministic, explainable weighted overlays.
- * Every weight traces to published parameters in Research Papers/ (see
- * PROJECT_PLAN.md §5). Scores are 0-100; bands: safe/moderate/high/severe.
+ * Weights are cited inline at each overlay: the flood and drain-priority sets
+ * are published in PROJECT_PLAN.md §5, the waste/drainage set below is this
+ * project's own choice. Scores are 0-100; bands: safe/moderate/high/severe.
  */
 
-import { WASTE } from '../data/calibration.js'
+import { WASTE, SERVICE_POLICY } from '../data/calibration.js'
 
 export const BANDS = [
   { max: 25, key: 'safe', label: 'Safe' },
@@ -23,8 +24,14 @@ export const RAIN_BANDS = [
 export const BAND_COLORS = { safe: 'var(--risk-safe)', moderate: 'var(--risk-moderate)', high: 'var(--risk-high)', severe: 'var(--risk-severe)' }
 export const bandColor = score => BAND_COLORS[bandOf(score).key]
 
-/** Hex twins of the band colors — for SVG contexts (Leaflet) that can't resolve CSS vars. */
-export const BAND_COLORS_HEX = { safe: '#009865', moderate: '#D97706', high: '#EA580C', severe: '#DC2626' }
+/**
+ * Hex twins of the band colors — for SVG contexts (Leaflet) that can't resolve
+ * CSS vars. These MUST track `--risk-*` in index.css; they are a hand-maintained
+ * copy, and `safe` in particular is not the brand emerald (see the note on
+ * `--risk-safe`). When the two drift, the map disagrees with every other surface
+ * about what "safe" looks like.
+ */
+export const BAND_COLORS_HEX = { safe: '#15803D', moderate: '#D97706', high: '#EA580C', severe: '#DC2626' }
 export const bandColorHex = score => BAND_COLORS_HEX[bandOf(score).key]
 export const bandLabel = score => bandOf(score).label
 
@@ -34,6 +41,14 @@ export function bandOf(score) {
 }
 
 const clamp01 = v => Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0))
+
+/**
+ * Fill levels read to two decimals wherever they are spoken about. The
+ * decimals are the point: they are what lets a refilling drain look like it is
+ * moving. Rounded here rather than at the source so a hand-built node in a
+ * caller still prints consistently with the live model's.
+ */
+const fmtPct = v => (Number.isFinite(v) ? v.toFixed(2) : '—')
 const numberOrNull = value => (value == null ? null : Number.isFinite(Number(value)) ? Number(value) : null)
 
 export function rainScore(rain6hMm, rainNowMm = 0) {
@@ -49,15 +64,55 @@ export function blockageScore(node = {}) {
 }
 
 /**
- * Overlay the field team's "mark serviced (demo)" state onto the static drain
- * telemetry. A serviced drain is simulated as freshly emptied (5% fill,
- * serviced 0h ago) so flood scores and the task queue react to the action.
- * Returns a NEW array; the input is never mutated, and non-serviced nodes are
- * passed through unchanged.
+ * The drain lifecycle state a fill level implies. Thresholds come from
+ * SERVICE_POLICY in calibration.js — this project's operational policy, not a
+ * cited parameter, and labelled as such in the UI.
+ *
+ * Note these are NOT the bands in BANDS above. Those band a 0-100 RISK SCORE
+ * into safe/moderate/high/severe. These describe a drain's own condition, and
+ * the two can disagree: a drain can be 'due' by fill while its zone's flood
+ * risk is 'severe' because of forecast rain.
+ *
+ * `hasServiceHistory` matters only below the due line. Being under 40% means
+ * "recently serviced" only if it actually was serviced — a drain that has never
+ * been cleared and simply sits low is work waiting, not work done, and must not
+ * wear a "Recently serviced" badge. (D-6's calibrated seed is 35%, and it has
+ * never been cleared.)
+ *
+ * An unknown fill returns 'due' — the app's standing rule is that a missing
+ * number must never read as safe, so an unreadable drain stays work.
  */
-export function applyServicedState(nodes, doneMap = {}) {
-  const map = doneMap || {}
-  return (nodes || []).map(node => (map[node.id] === true ? { ...node, fillPct: 5, lastServiceHrs: 0 } : node))
+export function serviceState(fillPct, hasServiceHistory = true) {
+  const v = numberOrNull(fillPct)
+  if (v == null) return 'due'
+  if (v >= SERVICE_POLICY.blockedAt) return 'blocked'
+  if (v >= SERVICE_POLICY.criticalAt) return 'critical'
+  if (v >= SERVICE_POLICY.dueAt) return 'due'
+  return hasServiceHistory ? 'serviced' : 'due'
+}
+
+/** Label + palette colour per lifecycle state, so the UI states them once. */
+export const SERVICE_STATE_META = {
+  serviced: { label: 'Recently serviced', color: BAND_COLORS.safe, hex: BAND_COLORS_HEX.safe },
+  due: { label: 'Due', color: BAND_COLORS.moderate, hex: BAND_COLORS_HEX.moderate },
+  critical: { label: 'Critical', color: BAND_COLORS.high, hex: BAND_COLORS_HEX.high },
+  blocked: { label: 'Blocked — must service', color: BAND_COLORS.severe, hex: BAND_COLORS_HEX.severe },
+}
+
+/**
+ * Is this drain work right now?
+ *
+ * A drain that has been serviced is out of the queue until it refills past
+ * SERVICE_POLICY.dueAt. A drain that has NEVER been serviced is always work
+ * whatever its fill: its calibrated seed is its documented current condition,
+ * so there is nothing for it to wait for. (D-6's seed is 35% — below the due
+ * threshold — and it is an open task today.)
+ *
+ * Stated as one rule over `serviceState` rather than a second copy of it, so
+ * the badge and the queue can never disagree about the same drain.
+ */
+export function drainIsOpen(fillPct, hasServiceHistory) {
+  return serviceState(fillPct, hasServiceHistory) !== 'serviced'
 }
 
 export function floodRisk({ rain6hMm, rainNowMm, zone, drainNodes } = {}) {
@@ -94,10 +149,13 @@ export function airRisk({ usAqi, pm25 } = {}) {
 
 /**
  * Waste & drainage risk (0-100) for one zone — the fourth hazard, alongside
- * flood / air / heat. Weights are published in PROJECT_PLAN.md §5 and follow
- * the same renormalize-when-missing contract as floodRisk: an input that is
- * absent is dropped from both the numerator and the denominator, so a zone
- * with no drain node is never silently scored "safe".
+ * flood / air / heat. These four weights are this project's own choice. They
+ * are consistent with the flood and priority weightings in PROJECT_PLAN.md §5,
+ * but that section sets neither of these numbers — nothing here should be read
+ * as a citation, and README.md's calibration section lists them as a choice.
+ * They follow the same renormalize-when-missing contract as floodRisk: an input
+ * that is absent is dropped from both the numerator and the denominator, so a
+ * zone with no drain node is never silently scored "safe".
  *
  *   drain = 0.45 × worst_blockage     (worst drain's blockage in the zone)
  *         + 0.25 × capacity_deficit   (1 - drainageCapacity, from lahore.js)
@@ -162,10 +220,19 @@ export function drainWhy(result = {}, { zone = {} } = {}) {
   const worst = result.worstDrain
   if (result.missing?.blockage) {
     whys.push('No drain telemetry is mapped to this zone — scoring on drainage capacity alone')
-  } else if (worst && p.blockage >= 60) {
-    whys.push(`${worst.name} is ${worst.fillPct ?? '—'}% full and unserved for ${worst.lastServiceHrs ?? '—'}h`)
   } else if (worst) {
-    whys.push(`${worst.name} is holding at ${worst.fillPct ?? '—'}% — nothing critical yet`)
+    // Phrased from the same lifecycle bands as the badge, so the explanation
+    // can never contradict the card it opens from.
+    const state = serviceState(worst.fillPct)
+    const fill = `${fmtPct(worst.fillPct)}%`
+    const unserved = `unserved for ${worst.lastServiceHrs ?? '—'}h`
+    if (state === 'blocked') whys.push(`${worst.name} is blocked at ${fill} — it has stopped draining, and only servicing clears it`)
+    else if (state === 'critical') whys.push(`${worst.name} is critical at ${fill}, ${unserved}`)
+    // Below the due line. Stated as the position it is in, not as a service
+    // that happened: this function has no service history to read, and a
+    // never-cleared drain can sit here too.
+    else if (state === 'serviced') whys.push(`${worst.name} is holding at ${fill} — under the ${SERVICE_POLICY.dueAt}% service line, ${unserved}`)
+    else whys.push(`${worst.name} is at ${fill}, ${unserved}`)
   }
   if (p.capacity >= 60) whys.push(`${zone.name || 'This zone'} drains at only ${Math.round((zone.drainageCapacity ?? 0) * 100)}% of its design-storm capacity`)
   if (p.unserved >= 50) whys.push('This drain has gone well past its routine service interval')
@@ -191,7 +258,11 @@ export function floodWhy(result = {}, { zone = {}, weather = {}, nodes } = {}) {
   const zoneNodes = (nodes || []).filter(n => n.zone === zone.id)
   if (zoneNodes.length) {
     const worst = zoneNodes.reduce((a, b) => blockageScore(a) > blockageScore(b) ? a : b)
-    if (blockageScore(worst) >= 60) whys.push(`${worst.name} is ${worst.fillPct ?? '—'}% full and unserved for ${worst.lastServiceHrs ?? '—'}h`)
+    // Only the two states that actually threaten the street get named here.
+    const state = serviceState(worst.fillPct)
+    if (state === 'blocked' || state === 'critical') {
+      whys.push(`${worst.name} is ${state} at ${fmtPct(worst.fillPct)}%, unserved for ${worst.lastServiceHrs ?? '—'}h`)
+    }
   }
   if (p.history >= 70) whys.push(`${zone.name || 'This zone'} has a history of waterlogging (near the Ravi low-lying belt)`)
   if (p.vulnerability >= 70) whys.push('Dense population with limited drainage capacity')

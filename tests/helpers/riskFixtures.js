@@ -1,5 +1,6 @@
 /** Shared risk-object fixtures for component tests (controlled props). */
 import { ZONES, DRAIN_NODES } from '../../src/data/lahore.js'
+import { serviceState, drainIsOpen } from '../../src/lib/risk.js'
 
 export const liveWeather = {
   tempC: 34, humidityPct: 60, rainNowMm: 0,
@@ -38,6 +39,15 @@ function buildZoneScores() {
   return out
 }
 
+/**
+ * The task queue as `useCityRisk` derives it: lifecycle state and openness come
+ * from the real `serviceState`/`drainIsOpen` rules rather than being restated
+ * here, so a change to the thresholds can never leave the fixtures describing a
+ * queue the app would not produce.
+ *
+ * These drains have no service history — they are the calibrated seeds — and a
+ * drain never serviced is open whatever its fill (see `drainIsOpen`).
+ */
 export function buildTaskQueue() {
   return DRAIN_NODES
     .map(n => {
@@ -50,6 +60,11 @@ export function buildTaskQueue() {
         priority: n.fillPct,
         parts: { blockage: n.fillPct, urgency: 50, population: 60, stale: 40 },
         blockage: n.fillPct,
+        state: serviceState(n.fillPct, false),
+        open: drainIsOpen(n.fillPct, false),
+        serviceCount: 0,
+        serviceEvents: [],
+        lastServiceAt: null,
       }
     })
     .sort((a, b) => b.priority - a.priority)
@@ -69,7 +84,7 @@ export function buildRisk(overrides = {}) {
     error: null,
     zoneScores: buildZoneScores(),
     taskQueue: buildTaskQueue(),
-    floodWhyFor: zone => [`Drain D-1 is 87% full`, `${zone.name} has a history of waterlogging`],
+    floodWhyFor: zone => [`Drain D-1 is 87.00% full`, `${zone.name} has a history of waterlogging`],
     ...overrides,
   }
 }

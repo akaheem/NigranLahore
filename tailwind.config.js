@@ -43,6 +43,18 @@ export default {
         ui: ['var(--font-ui)', 'system-ui', 'sans-serif'],
         accent: ['var(--font-accent)', 'sans-serif'],
       },
+      // The one step below Tailwind's own `text-xs`, plus the two tracking
+      // values with stated roles. Everything else stays on Tailwind's scale —
+      // the drift this replaces was fifteen arbitrary sizes in the sub-xs tier,
+      // not a problem with the named scale above it.
+      fontSize: {
+        micro: 'var(--text-micro)',
+      },
+      letterSpacing: {
+        label: 'var(--tracking-label)',
+        eyebrow: 'var(--tracking-eyebrow)',
+        display: 'var(--tracking-display)',
+      },
       transitionTimingFunction: {
         lux: 'var(--transition-lux)',
       },

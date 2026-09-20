@@ -23,13 +23,20 @@ if (!window.ResizeObserver) {
   }
 }
 
-// Leaflet cannot render in jsdom — stub the react-leaflet surface
+// Leaflet cannot render in jsdom — stub the react-leaflet surface.
+//
+// Every component the app imports must be listed here, not only the common
+// ones: a missing entry is `undefined` at render, which fails as "Element type
+// is invalid" and reads like a bug in whichever component happened to use it
+// first. `Circle` is the accuracy ring around a pinned report.
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
   TileLayer: () => null,
+  Circle: ({ children }) => <div data-testid="circle">{children}</div>,
   CircleMarker: ({ children }) => <div data-testid="circle-marker">{children}</div>,
   Marker: ({ children }) => <div data-testid="marker">{children}</div>,
   Popup: ({ children }) => <div data-testid="popup">{children}</div>,
+  Tooltip: ({ children }) => <div data-testid="tooltip">{children}</div>,
   useMap: () => ({ flyTo: vi.fn() }),
 }))
 

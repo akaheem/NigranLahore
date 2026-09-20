@@ -5,12 +5,28 @@
 /* ============================================================
    Nigran — Design System
    White ground, slate ink, deep emerald #009865 as the single accent.
-   There is no blue: emerald, slate and white is the whole system.
 
    Palette measured pixel-by-pixel from the civic platform this is
    matched to: white #FFFFFF ground, #F9FAFC raised surface, #0F172A
    ink, #45556C body, #009865 emerald, #007A55 deep emerald, #ECFDF5
    mint, #06231E dark surface.
+
+   Two hues sit outside that palette, both deliberate: the warm half of
+   the risk ramp (amber → orange → red) and one informational violet.
+   The previous version of this comment claimed "there is no blue",
+   which the code contradicted — the Leaflet attribution links and
+   `--risk-info` both carried blue. The links are overridden further
+   down and `--risk-info` is now violet, so the claim is true rather
+   than aspirational.
+
+   THE TYPE SCALE, and why it is written down here.
+   The views had drifted to fifteen arbitrary font sizes and eight
+   letter-spacings whose neighbours differed by roughly a third of a
+   pixel — 0.6rem next to 0.62rem next to 0.65rem, in the same card.
+   Invisible one at a time; collectively the reason the UI read as
+   unpolished without an obvious culprit. There is now exactly one step
+   below Tailwind's `text-xs`, and two tracking values with stated
+   roles. Nothing arbitrary survives.
    ============================================================ */
 
 :root {
@@ -34,7 +50,6 @@
   --accent-gold: var(--accent-green);
   --accent-gold-dark: var(--accent-green-dark);
   --accent-gold-light: var(--accent-green-light);
-  --color-gold: var(--accent-green);
   --border-light: rgba(15, 23, 42, 0.08);
   --border-medium: rgba(0, 152, 101, 0.32);
   --shadow-premium: 0 16px 44px rgba(15, 23, 42, 0.07);
@@ -46,21 +61,40 @@
   --cta-bg: #06231E;
   --cta-text: #FFFFFF;
 
-  /* Status hues. Green → amber → orange → red: the conventional risk ramp. The
-     accent green doubles as the safe band, so the brand colour and the "all
-     clear" reading are deliberately one hue. */
-  --risk-safe: var(--accent-green);
+  /* Status hues. Green → amber → orange → red: the conventional risk ramp.
+     `--risk-safe` is deliberately NOT `--accent-green` any more. It used to be,
+     which meant a zone reading "safe" and a primary button were the same
+     colour — the brand and a status were indistinguishable at a glance. The
+     safe band is now a leaf green (4.5:1 on white) and the brand stays emerald. */
+  --risk-safe: #15803D;
   --risk-moderate: #D97706;
   --risk-high: #EA580C;
   --risk-severe: #DC2626;
-  --risk-info: #0284C7;
+  /* The one hue outside both the palette and the ramp. It marks an informational
+     state, so it has to read as "not a severity" — neither the emerald brand nor
+     any point on green→red. It was #0284C7, the last blue in the app. */
+  --risk-info: #6D28D9;
 
-  /* Legacy accent names kept alive so nothing references dead hues. */
-  --accent-plum: #0F172A;
-  --accent-lavender: #D0FAE6;
-  --accent-rosegold: #FB923C;
-  --accent-sage: #009865;
+  /* The scale. See the note at the top of this file for why it exists.
+     `--text-xs` is Tailwind's 12px, restated as a custom property because
+     `.btn-lux-sm` and `select.field-lux-sm` read it through `var()`. It was
+     never defined, and an undefined custom property makes the declaration
+     invalid at computed-value time — `font-size` falls back to `unset`, i.e.
+     *inherit*, so both rendered at the parent's 16px. `.btn-lux-sm` was
+     therefore larger than the 14px `.btn-lux` it is the small variant of, which
+     is the opposite of its name and enough to make a form look subtly wrong
+     without any single element looking broken. */
+  --text-xs: 0.75rem;         /* 12px — Tailwind's text-xs, via var() */
+  --text-micro: 0.6875rem;    /* 11px — the ONLY step below text-xs */
+  --tracking-label: 0.08em;   /* micro labels: axis ticks, chips, source lines */
+  --tracking-eyebrow: 0.16em; /* section eyebrows and card headings */
+  --tracking-display: 0.22em; /* the wordmark and the footer, and nothing else */
+  --pad-card: 1.25rem;        /* one card padding; was five different values */
 
+  /* Two mints used to coexist — #ECFDF5 here and #D0FAE6 under the historical
+     name `--accent-lavender`, which was live in three places. They are one
+     token now. (`--accent-plum`, `--accent-rosegold`, `--accent-sage` and
+     `--color-gold` were genuinely unreferenced and are gone.) */
   --font-editorial: 'Cormorant Garamond', Georgia, serif;
   --font-ui: 'Inter', system-ui, sans-serif;
   --font-accent: 'Outfit', sans-serif;
@@ -104,34 +138,141 @@ h1, h2, h3, h4, h5, h6 {
    line / vignette sit above cards visually but not interactively. */
 .scan-line, .vignette { pointer-events: none; }
 
-/* ===== Vignette — faint depth cue, not a haze ===== */
+/* ===== Vignette — faint depth cue in the BACKGROUND, not a haze over the UI =====
+   This sat at z-index 900, which put it above `main` (z-index 1) and the header
+   (z-50) — so it was veiling every card and the navbar, not framing the
+   background. It never blocked a click (`pointer-events: none`), which is why it
+   went unnoticed for so long. At 0: it does the job it was written for. */
 .vignette {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at center, transparent 55%, rgba(15, 23, 42, 0.04) 100%);
+  background: radial-gradient(circle at center, transparent 55%, rgba(15, 23, 42, 0.03) 100%);
   pointer-events: none;
-  z-index: 900;
+  z-index: 0;
   transition: background 0.5s var(--transition-lux);
 }
 
+/* ===== Scale utilities =====
+   Each of these replaces an incantation that was being retyped with inline
+   styles at dozens of call sites. `font-accent text-[0.65rem] uppercase
+   tracking-[0.18em]` plus a muted colour appeared around forty times. They read
+   from the tokens in :root, so the scale has exactly one place to change. */
+
+/* Wrapped in `@layer components` deliberately. Tailwind emits its utility layer
+   AFTER the components layer, so `className="label-micro text-sm"` resolves to
+   text-sm. Left unlayered, these four rules would outrank every Tailwind utility
+   and could not be composed with anything — which is how the original inline
+   styles came to exist in the first place. */
+@layer components {
+
+/* The uppercase tracked label. 11px sounds small for text that matters, and is
+   not: uppercase with open tracking reads a full step larger than its measure.
+   That is precisely why the old sizes drifted upward — each author nudged it a
+   little, and nobody had a rule to appeal to. */
+.label-micro {
+  font-family: var(--font-accent);
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Section eyebrows and card headings: same treatment opened up, and in ink
+   rather than muted, because these are meant to be read rather than skimmed. */
+.label-eyebrow {
+  font-family: var(--font-accent);
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* The big-number treatment. `tabular-nums` is the load-bearing part: Cormorant
+   Garamond's default figures are proportional, so every score, millimetre and
+   percentage reflowed as its digits changed — a live dashboard whose numbers
+   twitch. Lining tabular figures sit still. */
+.figure {
+  font-family: var(--font-editorial);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  line-height: 1;
+}
+
+/* The on/off pill in the map toolbars. This existed four times as five inline
+   properties — and the copies had already drifted apart from each other. */
+.pill-toggle {
+  font-family: var(--font-accent);
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.3s var(--transition-lux),
+              color 0.3s var(--transition-lux),
+              border-color 0.3s var(--transition-lux);
+}
+
+.pill-toggle:hover {
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+/* On and off have to differ by more than opacity. The old treatment dimmed the
+   off state to 0.5 and left the on state as bare emerald text, so neither read
+   as a state at a glance — it just looked like one was broken. */
+.pill-toggle[aria-pressed='true'] {
+  background: var(--accent-green-light);
+  border-color: var(--border-medium);
+  color: var(--accent-gold-dark);
+}
+
+} /* @layer components */
+
 /* ===== Glass primitives ===== */
-/* Flat card: white, hairline border, no blur and no lift — the reference's
-   own card treatment. The depth cue is the border, not a shadow. */
+/* Flat card: white, hairline border, a shadow you feel rather than see — the
+   reference's own card treatment. The primary depth cue is the border.
+   The padding is one token now. It was `1.5rem` here and then overridden inline
+   at nearly every call site with four different values (`1rem`, `1rem 1.1rem`,
+   `1rem 1.25rem`, `1.1rem 1.3rem`), so no two cards on a screen quite lined up.
+   That quiet raggedness is a large part of what "unpolished" was describing. */
 .lux-card-glass {
   background: #FFFFFF;
   border: 1px solid var(--border-light);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: var(--pad-card);
   transition: box-shadow var(--time-lux) var(--transition-lux), border-color var(--time-lux) var(--transition-lux);
 }
 
 .lux-card-glass:hover {
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.07);
   border-color: rgba(15, 23, 42, 0.14);
+}
+
+/* The complaint card's status spine. On a board of forty reports the lifecycle
+   is the one thing that has to be readable while scrolling, and it was carried
+   by a chip alone — which means reading every card's header. A coloured left
+   edge is the same information at a glance.
+
+   It is a border rather than an absolutely-positioned rail so it follows the
+   card's own 16px corner instead of poking out past it. Written as
+   `.lux-card-glass.complaint-card` for a reason: `.lux-card-glass:hover` sets
+   the `border-color` shorthand, which would repaint the spine grey on hover.
+   The tone arrives as a custom property because the status taxonomy — and so
+   the colour — lives in `complaints.js`, not here. */
+.lux-card-glass.complaint-card {
+  border-left: 3px solid var(--status-tone, var(--border-light));
 }
 
 /* ===== Editorial layout utilities ===== */
@@ -180,9 +321,11 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 999px;
   padding: 0.32rem 0.9rem;
   font-family: var(--font-accent);
-  font-size: 0.62rem;
+  /* 0.62rem / 0.14em were two more one-off values on the last class still
+     carrying them. The badge is a label like any other. */
+  font-size: var(--text-micro);
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -226,17 +369,163 @@ h1, h2, h3, h4, h5, h6 {
   .stat-strip > *:nth-child(n + 3) { border-top: 1px solid rgba(15, 23, 42, 0.08); }
 }
 
+/* Site footer — emerald text on a shade of the page's own white.
+
+   Its own class rather than `.label-micro` plus utilities. That class is a
+   *label*: it carries a muted colour and the label tracking, neither of which
+   this band wants, so the footer would have had to override both. One class
+   that states the whole treatment cannot drift out of step with itself.
+
+   (An earlier version of this comment blamed the layering — it claimed
+   `.label-micro` was unlayered and so defeated any utility on top of it. That
+   is not true: the class sits in `@layer components` at line 166, and Tailwind
+   emits utilities after components, which is the whole reason
+   `label-eyebrow text-sm` works at RiskCard.jsx:31. The footer's own class is a
+   cleanliness choice, not a workaround.)
+
+   The band is `--bg-tertiary`, the same neutral shade `.stat-strip` uses: the
+   page colour a few steps darker rather than a second colour, so the footer
+   separates from the page without adding a hue the palette does not have. The
+   text is `--accent-green-dark` — 4.9:1 on this shade, clearing AA at this
+   size, where the mid emerald would be about 3.4:1. */
+.site-footer {
+  background: var(--bg-tertiary);
+  color: var(--accent-green-dark);
+  border-top: 1px solid var(--border-light);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  font-family: var(--font-accent);
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
+  /* The vignette is a positioned layer at z-index 0 and comes after this in the
+     DOM, so the band has to be lifted to sit over it. */
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Zone table ===== */
+/* A real <table>, because this is tabular data and the previous markup was not:
+   eight flex rows carrying a hand-rolled `borderBottom`, a negative inline
+   margin to fake full-bleed, and two competing `padding` declarations on the
+   same element (the second silently resetting the first). The columns never
+   lined up between rows because nothing was measuring them.
+
+   The row is the mouse target and the zone-name button inside it is the
+   keyboard one. The old row was a `role="button"` div with a real <button>
+   nested inside it — interactive content inside interactive content, which is
+   invalid and left keyboard focus with no visible ring. */
+.zone-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.zone-table th {
+  padding: 0 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border-medium);
+  text-align: left;
+}
+
+.zone-table td {
+  padding: 0.55rem 0.4rem;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+
+.zone-table tbody tr:last-child td { border-bottom: none; }
+
+.zone-table__row {
+  cursor: pointer;
+  transition: background 0.3s var(--transition-lux);
+}
+
+.zone-table__row:hover { background: var(--bg-secondary); }
+
+/* Active reads as a left rail plus a tint, not a tint alone: the fill is faint
+   enough that on a dark-ish row it was easy to lose, and the rail survives
+   whatever the row is sitting on. */
+.zone-table__row[data-active] {
+  background: var(--glow-color);
+  box-shadow: inset 3px 0 0 var(--accent-gold);
+}
+
+.zone-table__name {
+  font-family: var(--font-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.zone-table__row[data-active] .zone-table__name { color: var(--accent-gold-dark); }
+
+.zone-table__name:focus-visible,
+.zone-table__sort:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.zone-table__sort {
+  font-family: var(--font-accent);
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: color 0.3s var(--transition-lux);
+}
+
+.zone-table__sort:hover { color: var(--text-primary); }
+.zone-table__sort[data-active] { color: var(--accent-gold); }
+
 /* ===== Buttons (adapted: tighter padding for dashboard toolbar) ===== */
 /* Buttons are pills. Sentence case and semibold, not uppercase-and-tracked:
    the reference's own buttons read "Lodge Eco-Complaint", not a label. */
 .btn-lux {
   position: relative;
   overflow: hidden;
+  /* The hover wash is a pseudo-element that slides up over the button, and it
+     needs to land *behind* the label. `isolation` gives the button its own
+     stacking context, which is what lets the wash below sit at z-index -1:
+     above the button's own background, below its text.
+
+     Without it the wash escapes to the nearest ancestor stacking context and
+     paints in the positioned-and-z-index-0 layer, which lands on top of the
+     button's text — a bare text node is in-flow inline content and no `> *`
+     rule can reach it. So the label vanished on hover while the icon, a real
+     element the `> *` rule does lift, stayed visible. */
+  isolation: isolate;
+  /* Inline-flex is what a button with an icon in it needs, and six call sites
+     were each spelling out `display: inline-flex; align-items: center; gap` to
+     get it. On a text-only button this changes nothing: one child, so the gap
+     never applies and centring a single item is a no-op. */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   background: var(--accent-gold);
   color: var(--on-accent);
   padding: 0.7rem 1.5rem;
   font-family: var(--font-ui);
-  font-size: 0.9rem;
+  /* 0.9rem was a one-off between two Tailwind steps. Buttons and fields share
+     one size now, so a button sitting beside an input — the hero's zone picker
+     and `Locate me` — lines up without an inline font-size on either. */
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
@@ -253,9 +542,11 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--accent-gold-dark);
   transform: translateY(100%);
   transition: transform var(--time-lux) var(--transition-lux);
-  z-index: 0;
+  z-index: -1;
 }
 
+/* Negative z-index on the wash is what actually keeps the label readable; this
+   lifts a real element above it too, and costs nothing. */
 .btn-lux > * { position: relative; z-index: 1; }
 
 .btn-lux:hover::before { transform: translateY(0); }
@@ -283,6 +574,166 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-lux-soft:hover { color: var(--text-primary); }
 
+/* Two compact variants, for the two sizes of "smaller than a page button" this
+   app actually has: one for a button inside a form or a task card, one for a
+   button inside a table row. Between them they replace eight call sites that
+   were each carrying their own inline `padding` and `fontSize` — the same
+   button, at 0.7rem, 0.72rem and 0.65rem, in three files.
+
+   Defined after `.btn-lux` so they win on source order at equal specificity. */
+.btn-lux-sm {
+  padding: 0.45rem 1rem;
+  font-size: var(--text-xs);
+}
+
+.btn-lux-xs {
+  padding: 0.3rem 0.8rem;
+  font-size: var(--text-micro);
+}
+
+/* A button that is visually disabled but still focusable and still announces
+   why — `disabled` alone would drop it out of the tab order and leave the
+   reason visible only to a mouse. */
+.btn-lux:disabled,
+.btn-lux[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-lux:disabled::before,
+.btn-lux[aria-disabled='true']::before { transform: translateY(100%); }
+
+/* ===== Form fields ===== */
+/* The complaints board is the first view in the app with real text entry. The
+   only input anywhere else is the zone `<select>` in CitizenView, which rides
+   `select.field-lux` below rather than carrying seven inline properties.
+   One definition here rather than the same eight inline properties on every
+   control. Scoped to the elements so a `<textarea className="field-lux">`
+   inherits the lot and only the few properties that genuinely differ are
+   overridden below. */
+.field-lux {
+  width: 100%;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 0.3s var(--transition-lux), background 0.3s var(--transition-lux);
+}
+
+.field-lux::placeholder { color: var(--text-muted); }
+
+.field-lux:hover { border-color: var(--border-medium); }
+
+/* `background-color`, not the `background` shorthand. The shorthand resets
+   `background-image` to none, which would erase the select's chevron on focus —
+   the control would appear to lose its arrow the moment you used it. */
+.field-lux:focus {
+  background-color: var(--bg-primary);
+  border-color: var(--accent-gold);
+}
+
+.field-lux:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+textarea.field-lux {
+  resize: vertical;
+  min-height: 7rem;
+}
+
+/* A `<select>` on the same token as the text fields. `appearance: none` is what
+   makes it match at all — the native control ignores nearly everything else —
+   and the chevron is an inline data-URI so the markup needs no extra element.
+   This replaces the seven inline properties `CitizenView` was carrying. */
+select.field-lux {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%2364748B' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  padding-right: 2.2rem;
+  cursor: pointer;
+}
+
+/* Restated for the select so the chevron survives focus. */
+select.field-lux:focus {
+  background-color: var(--bg-primary);
+}
+
+/* The compact select, for a control sitting in a toolbar row instead of a form
+   — the complaints board's zone filter was three inline properties. Written as
+   `select.field-lux-sm` so it outranks `select.field-lux` on source order: that
+   rule sets `padding-right` to clear the chevron, and at this size the padding
+   has to be restated rather than inherited, or the arrow lands on the text. */
+select.field-lux-sm {
+  width: auto;
+  padding: 0.3rem 1.9rem 0.3rem 0.6rem;
+  font-size: var(--text-xs);
+}
+
+/* Filter chips — the same pill vocabulary as the nav, sized for a toolbar row.
+   The pressed state is mint, so one accent still carries the whole system. */
+.chip-lux {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  padding: 0.32rem 0.85rem;
+  font-family: var(--font-accent);
+  /* 0.68rem and 0.06em were a size and a tracking that existed on this class
+     and nowhere else. A chip sits directly beside a `.pill-toggle` on the
+     complaints board, so the two now share the one label size. */
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-label);
+  /* A chip frequently carries an icon, and both call sites that do were each
+     repeating these same three properties inline. Harmless on a text-only
+     chip: one child, so the gap never applies. */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.3s var(--transition-lux), color 0.3s var(--transition-lux), border-color 0.3s var(--transition-lux);
+}
+
+.chip-lux:hover {
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+.chip-lux[aria-pressed='true'] {
+  background: var(--accent-green-light);
+  border-color: transparent;
+  color: var(--accent-gold-dark);
+  font-weight: 600;
+}
+
+/* ===== Header data-status pill ===== */
+/* The Retry control inside the header pill. It is written after `.label-micro`
+   deliberately: it takes that class's type — the button was 0.58rem, the
+   smallest type in the app — and this overrides only the colour it needs to
+   differ on. */
+.data-status__retry {
+  background: none;
+  border: 1px solid var(--border-medium);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  padding: 0.1rem 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.3s var(--transition-lux), color 0.3s var(--transition-lux);
+}
+
+.data-status__retry:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold-dark);
+}
+
 /* ===== Glass navbar (full-width, blur 24, luminous glacier) ===== */
 .navbar-glass {
   background: rgba(255, 255, 255, 0.82) !important;
@@ -303,6 +754,59 @@ h1, h2, h3, h4, h5, h6 {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
+}
+
+/* ===== Navbar items =====
+   The nav's geometry lives here rather than inline in App.jsx, because the two
+   things that have to change at a breakpoint — font size and pill padding — are
+   exactly the two an inline style cannot express. Only the dynamic properties
+   (the mint fill and the deep-emerald text on the active view) stay inline.
+
+   Below `lg` the four view names do not fit beside the wordmark and the status
+   chip, so the nav takes a row of its own instead of being clipped off the
+   right-hand edge. `overflow-x` is a last-resort floor at 320px, where even the
+   tightened pills are wider than the content band; the scrollbar is hidden
+   because a permanent one under a glass navbar reads as a defect. */
+.nav-row {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* A scroll container clips at its padding box, and the focus ring is drawn
+     2px outside the pill with a 2px offset — so the leading pill's ring was cut
+     off on the left. The inset gives it somewhere to go; the negative margin
+     cancels the shift so the pills stay where they were. Both are removed at
+     `lg`, where the row stops scrolling. */
+  padding: 4px;
+  margin-left: -4px;
+}
+
+.nav-row::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-pill {
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  transition: background .3s var(--transition-lux), color .3s var(--transition-lux);
+}
+
+@media (min-width: 1024px) {
+  .nav-row {
+    overflow-x: visible;
+    padding: 0;
+    margin-left: 0;
+  }
+
+  .nav-pill {
+    font-size: 0.875rem;
+    padding: 0.4rem 1rem;
+  }
 }
 
 /* Ambient colored light blobs (reused behind views) */
@@ -453,3 +957,21 @@ html { scrollbar-width: thin; scrollbar-color: var(--bg-tertiary) var(--bg-prima
 .leaflet-container a:focus {
   color: var(--accent-gold);
 }
+
+/* The citizen-report count beside a zone. A Leaflet tooltip rather than a
+   marker with a hand-built divIcon: Leaflet already anchors and repositions
+   tooltips with their parent shape, and the arrow is the one thing to remove. */
+.leaflet-tooltip.report-badge {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-medium);
+  color: var(--accent-gold-dark);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-family: var(--font-accent);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+}
+
+.leaflet-tooltip.report-badge::before { display: none; }

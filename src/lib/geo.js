@@ -28,6 +28,48 @@ export function walkMinutes(km, kmh = WALK_KMH) {
 }
 
 /**
+ * How precisely a citizen's own location may be published: three decimal
+ * places, ~111 m north–south and ~95 m east–west at Lahore's latitude.
+ *
+ * This is a privacy floor, not a storage format. A pin precise enough to name
+ * the street is what makes the map useful; one precise enough to name the house
+ * is a thing a person did not agree to when they tapped "use my location", and
+ * the difference between the two is three decimal places.
+ *
+ * Mirrored by `COORD_DECIMALS` in server/src/validate.js, which re-rounds
+ * whatever it is sent — the client rounds so the person sees what will be
+ * stored, the server rounds because it cannot assume the client did.
+ */
+export const COORD_DECIMALS = 3
+
+/** The size of that rounding, in metres — the figure the UI quotes. */
+export const LOCATION_PRECISION_M = 111
+
+/**
+ * Snap a coordinate to `decimals` places, or null if it is not a usable number.
+ *
+ * Strict about its input: `Number(null)` and `Number('')` are both 0, so a
+ * lenient version would silently place a report at (0, 0) in the Atlantic.
+ */
+export function roundCoordinate(value, decimals = COORD_DECIMALS) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null
+  const factor = 10 ** decimals
+  return Math.round(value * factor) / factor
+}
+
+/**
+ * Lahore, roughly. A fix outside this box is a mis-set device rather than a
+ * place someone is standing, and the form refuses it rather than pinning a
+ * report to the sea. Mirrors `LAHORE_BOUNDS` in server/src/validate.js.
+ */
+export const LAHORE_BOUNDS = { minLat: 31.2, maxLat: 31.8, minLng: 74.1, maxLng: 74.6 }
+
+export const inLahore = ({ lat, lng }) =>
+  Number.isFinite(lat) && Number.isFinite(lng)
+  && lat >= LAHORE_BOUNDS.minLat && lat <= LAHORE_BOUNDS.maxLat
+  && lng >= LAHORE_BOUNDS.minLng && lng <= LAHORE_BOUNDS.maxLng
+
+/**
  * The `limit` nearest items to `origin`, each annotated with `distanceKm`.
  * Sorted by distance ascending, ties broken by `capacity` descending so the
  * larger facility wins when two sit equally far away. Items missing usable

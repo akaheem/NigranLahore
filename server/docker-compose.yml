@@ -1,0 +1,39 @@
+# A throwaway Postgres for running the shared service log and complaints board
+# locally. This is the development counterpart to the managed instance the
+# README describes for Render — nothing here is used in production.
+#
+#   docker compose up -d      start it
+#   docker compose down       stop it, keep the data
+#   docker compose down -v    stop it and throw the data away (a clean slate)
+#
+# The credentials are deliberately trivial and deliberately committed: they are
+# a localhost-only development database, and a secret that has to be looked up
+# before the project can be run is a secret that ends up in a `.env` file
+# nobody can reproduce.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nigran-postgres
+    environment:
+      POSTGRES_USER: nigran
+      POSTGRES_PASSWORD: nigran
+      POSTGRES_DB: nigran
+    ports:
+      # 5433 on the host, not 5432: a developer machine very often already has
+      # Postgres running on the default port, and a compose file that silently
+      # fails to bind (or worse, binds to the wrong database) is a confusing
+      # afternoon. The DATABASE_URL in .env.example uses this port.
+      - '5433:5432'
+    volumes:
+      - nigran-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # `npm run smoke` connects immediately after `up -d`, and Postgres
+      # accepts a TCP connection a moment before it will answer a query. The
+      # healthcheck is what makes `docker compose up -d --wait` mean something.
+      test: ['CMD-SHELL', 'pg_isready -U nigran -d nigran']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  nigran-pgdata:

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
+import { Droplets, Tent, Cross, MapPin } from 'lucide-react'
 import CityMap from './CityMap.jsx'
 import RiskCard from './RiskCard.jsx'
+import BandMeter, { BandPill } from './BandMeter.jsx'
 import { RainTimeline } from './Timeline24h.jsx'
 import { ZONES, COOL_ASSETS } from '../data/lahore.js'
 import { RECORDS, TELEMETRY_NOTE } from '../data/calibration.js'
@@ -13,7 +15,7 @@ const aqiBand = aqi =>
   aqi <= 150 ? { c: 'var(--risk-high)', l: 'Unhealthy (sensitive)' } :
   { c: 'var(--risk-severe)', l: 'Unhealthy+' }
 
-const ASSET_EMOJI = { water: '💧', camp: '⛺', hospital: '🏥' }
+const ASSET_ICON = { water: Droplets, camp: Tent, hospital: Cross }
 const ASSET_LABEL = { water: 'Drinking water', camp: 'Relief camp', hospital: 'Heat unit' }
 
 export default function CitizenView({ risk, selectedZone, onSelectZone, showCool, onToggleCool, onSwitch, servicedIds = [] }) {
@@ -74,47 +76,57 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
     <div className="editorial-container py-10">
       {/* Live zone strip — the selected zone's OWN Open-Meteo feed */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="lux-card-glass py-4" style={{ padding: '1rem 1.25rem' }}>
-          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Rain next 6h — {selectedZone.name}</p>
-          <p className="font-editorial text-3xl mt-1">{risk.rain6hMm != null ? `${risk.rain6hMm.toFixed(1)}` : '—'}<span className="text-sm"> mm</span></p>
+        <div className="lux-card-glass">
+          <p className="label-micro">Rain next 6h — {selectedZone.name}</p>
+          <p className="figure font-editorial text-3xl mt-1">{risk.rain6hMm != null ? `${risk.rain6hMm.toFixed(1)}` : '—'}<span className="text-sm"> mm</span></p>
         </div>
-        <div className="lux-card-glass" style={{ padding: '1rem 1.25rem' }}>
-          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Air (US AQI) — {selectedZone.name}</p>
-          <p className="font-editorial text-3xl mt-1" style={{ color: band.c }}>
+        <div className="lux-card-glass">
+          <p className="label-micro">Air (US AQI) — {selectedZone.name}</p>
+          <p className="figure font-editorial text-3xl mt-1" style={{ color: band.c }}>
             {risk.air?.aqi ?? '—'}
             <span className="text-xs ml-2 font-accent" style={{ color: band.c }}>{band.l}</span>
           </p>
         </div>
-        <div className="lux-card-glass" style={{ padding: '1rem 1.25rem' }}>
-          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Temperature — {selectedZone.name}</p>
-          <p className="font-editorial text-3xl mt-1">{risk.weather?.tempC != null ? `${Math.round(risk.weather.tempC)}°C` : '—'}</p>
+        <div className="lux-card-glass">
+          <p className="label-micro">Temperature — {selectedZone.name}</p>
+          <p className="figure font-editorial text-3xl mt-1">{risk.weather?.tempC != null ? `${Math.round(risk.weather.tempC)}°C` : '—'}</p>
         </div>
-        <div className="lux-card-glass" style={{ padding: '1rem 1.25rem' }}>
-          <p className="font-accent text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Humidity — {selectedZone.name}</p>
-          <p className="font-editorial text-3xl mt-1">{risk.weather?.humidityPct != null ? `${risk.weather.humidityPct}%` : '—'}</p>
+        <div className="lux-card-glass">
+          <p className="label-micro">Humidity — {selectedZone.name}</p>
+          <p className="figure font-editorial text-3xl mt-1">{risk.weather?.humidityPct != null ? `${risk.weather.humidityPct}%` : '—'}</p>
         </div>
       </div>
 
+      {/* A degraded feed is the one thing on this screen a reader must not miss,
+          and it was set in tracked uppercase at 10px — the quietest treatment on
+          the page for the loudest message. It reads as a banner now. */}
       {showFallbackNote && (
-        <p className="mb-6 font-accent text-[0.65rem] uppercase tracking-[0.15em]" style={{ color: 'var(--risk-moderate)' }}>
+        <div
+          className="mb-6 rounded-xl px-4 py-3 text-sm"
+          style={{
+            background: 'color-mix(in srgb, var(--risk-moderate) 10%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--risk-moderate) 30%, transparent)',
+            color: 'var(--text-secondary)',
+          }}
+        >
           {risk.status === 'offline'
             ? 'Live feed unreachable — values withheld rather than guessed. Hit Retry or check your connection.'
             : 'Showing cached data — live feed temporarily unavailable'}
-        </p>
+        </div>
       )}
 
       <div className="grid lg:grid-cols-[1.2fr_1fr] gap-6">
         {/* Map */}
-        <div className="lux-card-glass" style={{ padding: '1rem', minHeight: 460, display: 'flex', flexDirection: 'column' }}>
-          <div className="flex items-center justify-between mb-3 px-2">
-            <h3 className="font-accent uppercase tracking-[0.18em] text-sm">Lahore — flood risk zones</h3>
+        <div className="lux-card-glass" style={{ minHeight: 460, display: 'flex', flexDirection: 'column' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="label-eyebrow text-sm">Lahore — flood risk zones</h3>
             <button
               type="button"
               onClick={onToggleCool}
-              className="font-accent text-[0.65rem] uppercase tracking-[0.15em]"
-              style={{ background: 'none', border: '1px solid var(--accent-gold)', color: 'var(--accent-gold)', borderRadius: 999, padding: '0.25rem 0.8rem', cursor: 'pointer', opacity: showCool ? 1 : 0.5 }}
+              aria-pressed={showCool}
+              className="pill-toggle"
             >
-              Cool assets {showCool ? 'on' : 'off'}
+              Cool assets
             </button>
           </div>
           <div style={{ flex: 1, minHeight: 380 }}>
@@ -123,10 +135,11 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
               selectedZone={selectedZone}
               onSelectZone={onSelectZone}
               showCool={showCool}
+              drainNodes={risk.drainNodes}
               servicedIds={servicedIds}
             />
           </div>
-          <p className="mt-2 text-[0.68rem]" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-2 text-micro" style={{ color: 'var(--text-muted)' }}>
             {TELEMETRY_NOTE}
           </p>
         </div>
@@ -134,43 +147,50 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
         {/* Zone panel */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="lux-card-glass">
-            <p className="editorial-header-num text-lg">Your area</p>
+            <p className="label-eyebrow">Your area</p>
             <div className="mt-3 flex gap-2">
               <select
                 value={selectedZone.id}
                 onChange={e => onSelectZone(ZONES.find(z => z.id === e.target.value))}
-                className="w-full font-accent text-sm"
-                style={{
-                  background: 'var(--bg-tertiary)',
-                  color: 'var(--text-primary)',
-                  border: '1px solid var(--border-medium)',
-                  borderRadius: 8,
-                  padding: '0.7rem 0.9rem',
-                  outline: 'none',
-                }}
+                className="field-lux"
               >
                 {ZONES.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
               </select>
               <button
                 type="button"
                 onClick={locateMe}
-                className="btn-lux btn-lux-outline"
-                style={{ padding: '0.62rem 1.1rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+                className="btn-lux btn-lux-outline shrink-0"
               >
                 Locate me
               </button>
             </div>
             {locateMsg && (
-              <p className="mt-2 text-[0.7rem]" style={{ color: 'var(--text-muted)' }}>{locateMsg}</p>
+              <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>{locateMsg}</p>
             )}
-            <div className="mt-4 flex items-baseline gap-3">
-              <span className="font-editorial text-6xl" style={{ color: bandColor(zoneScore) }}>{zoneScore}</span>
-              <span className="font-accent uppercase tracking-[0.2em] text-xs" style={{ color: 'var(--text-secondary)' }}>
-                flood risk /100
-              </span>
+
+            {/* Everything above this line used to be the same size as
+                everything below it: a heading, a dropdown, a button, the score
+                and the action list all sat within a couple of pixels of each
+                other, so the eye had no way in. The score is now unambiguously
+                the largest thing on the screen, and the meter says where it sits
+                on the ramp — the number means something without a lookup. */}
+            <div className="mt-6 flex items-center justify-between gap-4">
+              <div className="flex items-baseline gap-2">
+                {/* The one 6xl figure in the app, and both the unit suite and
+                    the E2E run select it by these two classes. Its text has to
+                    stay the bare number, so the unit sits outside it rather
+                    than as a child. */}
+                <span className="figure font-editorial text-6xl" style={{ color: bandColor(zoneScore) }}>
+                  {zoneScore}
+                </span>
+                <span className="label-micro">flood risk /100</span>
+              </div>
+              <BandPill score={zoneScore} />
             </div>
-            <div className="mt-4">
-              <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em] mb-2" style={{ color: 'var(--accent-gold)' }}>What to do now</p>
+
+            <BandMeter score={zoneScore} height={8} className="mt-4" />
+            <div className="mt-6 pt-5" style={{ borderTop: '1px solid var(--border-light)' }}>
+              <p className="label-micro mb-2" style={{ color: 'var(--accent-gold)' }}>What to do now</p>
               <ul className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                 {actions.map((a, i) => (
                   <li key={i} className="flex gap-2"><span style={{ color: 'var(--accent-gold)' }}>—</span><span>{a}</span></li>
@@ -179,27 +199,23 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
             </div>
           </div>
 
-          {/* 6h rain timeline + 72h chance strip — the zone's own forecast */}
+          {/* 6h rain timeline + 72h chance strip — the zone's own forecast.
+              Both strips go through RainTimeline. The 6-hour block used to be a
+              hand-rolled chart two screens away from this one, on its own scale
+              (`mm / 5`) and its own colour bands (`> 2` = high), which disagreed
+              with the 72-hour strip directly below it: the same 4 mm hour was
+              orange in one and green in the other. One chart, one scale, one
+              palette — so the two can no longer contradict each other. */}
           <div className="lux-card-glass">
-            <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>Rain — next 6 hours ({selectedZone.name})</p>
-            <div className="mt-3 flex items-end gap-2" style={{ height: 80 }}>
-              {(risk.weather?.next6h ?? []).map((mm, i) => {
-                const prob = risk.weather?.next6hProb?.[i]
-                const h = Math.max(4, Math.min(80, (mm / 5) * 80))
-                return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div
-                      title={`${(risk.weather?.hourlyTime?.[i] ?? '').slice(11, 16)} — ${mm} mm${prob != null ? ` · ${prob}% chance` : ''}`}
-                      style={{ width: '100%', height: h, background: mm > 2 ? 'var(--risk-high)' : mm > 0.3 ? 'var(--risk-moderate)' : 'var(--risk-safe)', borderRadius: 3, opacity: prob != null ? 0.4 + Math.min(0.6, (prob / 100) * 0.6) : 0.85, transition: 'height .6s var(--transition-lux)' }} />
-                    <span className="text-[0.6rem]" style={{ color: 'var(--text-muted)' }}>{(risk.weather?.hourlyTime?.[i] ?? '').slice(11, 13)}</span>
-                  </div>
-                )
-              })}
-              {(risk.weather?.next6h ?? []).length === 0 && (
-                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>waiting for live data…</span>
-              )}
+            <p className="label-micro">Rain — next 6 hours ({selectedZone.name})</p>
+            <div className="mt-3">
+              <RainTimeline
+                hours={risk.weather?.next6h ?? []}
+                times={risk.weather?.hourlyTime ?? []}
+                prob={risk.weather?.next6hProb ?? []}
+              />
             </div>
-            <p className="mt-4 font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>Rain chance — next 72 hours</p>
+            <p className="label-micro mt-5">Rain chance — next 72 hours</p>
             <div className="mt-3">
               <RainTimeline
                 hours={risk.weather?.next72h ?? []}
@@ -213,45 +229,58 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
           {/* Nearest relief — water plants, camps and heat units, ranked by
               walking distance from the selected zone. */}
           <div className="lux-card-glass">
-            <p className="font-accent text-[0.65rem] uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>
+            <p className="label-micro">
               Nearest relief from {selectedZone.name}
             </p>
             <div className="mt-3" style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-              {nearestRelief.map(a => (
-                <div key={a.id} className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2">
-                    <span aria-hidden="true">{ASSET_EMOJI[a.type] || '📍'}</span>
-                    <div>
-                      <p className="text-[0.82rem] leading-snug" style={{ color: 'var(--text-secondary)' }}>{a.name}</p>
-                      <p className="text-[0.68rem]" style={{ color: 'var(--text-muted)' }}>
-                        {ASSET_LABEL[a.type] || 'Relief'} · {a.capacity.toLocaleString()} people/day
+              {nearestRelief.map(a => {
+                // Emoji stood here: three glyphs rendered by the OS font, at
+                // three different sizes and baselines, in colours that had
+                // nothing to do with the palette. These are the same three
+                // concepts from the icon set the rest of the app already uses.
+                const Icon = ASSET_ICON[a.type] ?? MapPin
+                return (
+                  <div key={a.id} className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <span
+                        aria-hidden="true"
+                        className="shrink-0 inline-flex items-center justify-center rounded-full"
+                        style={{ width: 28, height: 28, background: 'var(--accent-green-light)', color: 'var(--accent-gold-dark)' }}
+                      >
+                        <Icon size={15} />
+                      </span>
+                      <div>
+                        <p className="text-sm leading-snug" style={{ color: 'var(--text-secondary)' }}>{a.name}</p>
+                        <p className="text-micro" style={{ color: 'var(--text-muted)' }}>
+                          {ASSET_LABEL[a.type] || 'Relief'} · {a.capacity.toLocaleString()} people/day
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="figure font-editorial text-xl" style={{ color: 'var(--accent-gold)' }}>{a.distanceKm.toFixed(1)}<span className="text-xs"> km</span></p>
+                      <p className="text-micro" style={{ color: 'var(--text-muted)' }}>
+                        ~{walkMinutes(a.distanceKm)} min walk
                       </p>
+                      <a
+                        href={`https://www.google.com/maps?q=${a.lat},${a.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="label-micro"
+                        style={{ color: 'var(--accent-gold)' }}
+                      >
+                        Navigate ↗
+                      </a>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-editorial text-xl" style={{ color: 'var(--accent-gold)' }}>{a.distanceKm.toFixed(1)}<span className="text-xs"> km</span></p>
-                    <p className="text-[0.62rem]" style={{ color: 'var(--text-muted)' }}>
-                      ~{walkMinutes(a.distanceKm)} min walk
-                    </p>
-                    <a
-                      href={`https://www.google.com/maps?q=${a.lat},${a.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-accent text-[0.62rem] uppercase tracking-[0.12em]"
-                      style={{ color: 'var(--accent-gold)' }}
-                    >
-                      Navigate ↗
-                    </a>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
               {nearestRelief.length === 0 && (
-                <p className="text-[0.78rem]" style={{ color: 'var(--text-muted)' }}>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   No relief assets mapped near this zone.
                 </p>
               )}
             </div>
-            <p className="mt-3 text-[0.62rem]" style={{ color: 'var(--text-muted)' }}>
+            <p className="mt-3 text-micro" style={{ color: 'var(--text-muted)' }}>
               Distances are straight-line from the zone centre, not routing. Facility list is a reference set,
               not live municipal capacity. Walk time assumes 4.5 km/h.
             </p>
@@ -300,10 +329,10 @@ export default function CitizenView({ risk, selectedZone, onSelectZone, showCool
         <p className="editorial-header-num text-xl mb-4">VI — The city, lately</p>
         <div className="grid md:grid-cols-5 gap-4">
           {RECORDS.map((r, i) => (
-            <div key={i} className="lux-card-glass" style={{ padding: '1rem 1.1rem' }}>
-              <p className="font-accent text-[0.6rem] uppercase tracking-[0.18em]" style={{ color: 'var(--accent-gold)' }}>{r.date}</p>
-              <p className="mt-2 text-[0.82rem] leading-snug" style={{ color: 'var(--text-secondary)' }}>{r.fact}</p>
-              <p className="mt-2 text-[0.62rem]" style={{ color: 'var(--text-muted)' }}>src: {r.src}</p>
+            <div key={i} className="lux-card-glass">
+              <p className="label-micro" style={{ color: 'var(--accent-gold)' }}>{r.date}</p>
+              <p className="mt-2 text-sm leading-snug" style={{ color: 'var(--text-secondary)' }}>{r.fact}</p>
+              <p className="mt-2 text-micro" style={{ color: 'var(--text-muted)' }}>src: {r.src}</p>
             </div>
           ))}
         </div>

@@ -23,7 +23,7 @@ export default function CoutureSparkles({ theme }) {
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Particle system: Low density, 32 cyan-on-theme sparkles
+    // Particle system: low density, 32 emerald-on-theme sparkles
     const PARTICLE_COUNT = 32;
     const particles = [];
 
@@ -31,12 +31,12 @@ export default function CoutureSparkles({ theme }) {
       let size, baseOpacity, type;
       
       if (!isLarge) {
-        // 90% Tiny gold particles (1-2px)
+        // Tiny emerald particles (1-2px) — 28 of the 32
         size = 1.0 + Math.random() * 1.0;
         baseOpacity = 0.10 + Math.random() * 0.06; // 0.10 to 0.16
         type = Math.random() < 0.65 ? 'bokeh' : 'diamond';
       } else {
-        // 10% Larger luxury sparkles (3-4px)
+        // Larger emerald sparkles (3-4px) — the remaining 4
         size = 3.0 + Math.random() * 1.0;
         baseOpacity = 0.13 + Math.random() * 0.06; // 0.13 to 0.19
         type = Math.random() < 0.5 ? 'four-point' : 'diamond';

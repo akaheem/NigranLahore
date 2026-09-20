@@ -3,10 +3,90 @@ import {
   RAIN_BANDS, bandOf, bandColor, bandLabel,
   rainScore, blockageScore, floodRisk, heatRisk, airRisk, taskPriority,
   floodWhy, airWhy, heatWhy, drainRisk, drainWhy,
+  serviceState, drainIsOpen, SERVICE_STATE_META,
 } from '../../src/lib/risk.js'
+import { SERVICE_POLICY } from '../../src/data/calibration.js'
 import { ZONES, DRAIN_NODES } from '../../src/data/lahore.js'
 
 const shahdara = ZONES.find(z => z.id === 'shahdara')
+
+describe('serviceState — the four-band drain lifecycle', () => {
+  it('puts each boundary on the documented side of the line', () => {
+    // Both edges of every band. The thresholds are 40 / 80 / 95 and each is
+    // inclusive of the band it opens, so 39.99 is still "recently serviced"
+    // and 40.00 is already work again.
+    expect(serviceState(0)).toBe('serviced')
+    expect(serviceState(39.99)).toBe('serviced')
+    expect(serviceState(40)).toBe('due')
+    expect(serviceState(79.99)).toBe('due')
+    expect(serviceState(80)).toBe('critical')
+    expect(serviceState(94.99)).toBe('critical')
+    expect(serviceState(95)).toBe('blocked')
+    expect(serviceState(100)).toBe('blocked')
+  })
+
+  it('reads its thresholds from SERVICE_POLICY rather than restating them', () => {
+    expect(serviceState(SERVICE_POLICY.dueAt)).toBe('due')
+    expect(serviceState(SERVICE_POLICY.criticalAt)).toBe('critical')
+    expect(serviceState(SERVICE_POLICY.blockedAt)).toBe('blocked')
+    expect(serviceState(SERVICE_POLICY.dueAt - 0.01)).toBe('serviced')
+  })
+
+  it('never calls a never-serviced drain serviced, however low it sits', () => {
+    // D-6's seed is 35% — under the due line. Without history it is work, not
+    // history, and must not wear a "Recently serviced" badge.
+    expect(serviceState(35, false)).toBe('due')
+    expect(serviceState(0, false)).toBe('due')
+    // …and the same fill with history behind it is genuinely serviced.
+    expect(serviceState(35, true)).toBe('serviced')
+  })
+
+  it('treats an unknown fill as work, never as safe', () => {
+    // A missing number must not read as "recently serviced".
+    for (const v of [null, undefined, NaN, 'x']) expect(serviceState(v)).toBe('due')
+  })
+
+  it('gives every state a label and a colour', () => {
+    for (const key of ['serviced', 'due', 'critical', 'blocked']) {
+      expect(SERVICE_STATE_META[key].label).toBeTruthy()
+      expect(SERVICE_STATE_META[key].color).toMatch(/^var\(--risk-/)
+      expect(SERVICE_STATE_META[key].hex).toMatch(/^#[0-9A-F]{6}$/i)
+    }
+    // Blocked is the one that must shout.
+    expect(SERVICE_STATE_META.blocked.label).toMatch(/must service/i)
+  })
+})
+
+describe('drainIsOpen', () => {
+  it('keeps a never-serviced drain open whatever its fill', () => {
+    // Its calibrated seed is its documented current condition, so there is
+    // nothing for it to wait for — this is what keeps D-6 (35%) in today's queue.
+    for (const n of DRAIN_NODES) expect(drainIsOpen(n.fillPct, false)).toBe(true)
+    expect(drainIsOpen(5, false)).toBe(true)
+  })
+
+  it('closes a serviced drain until it refills past the due line', () => {
+    expect(drainIsOpen(SERVICE_POLICY.clearedTo, true)).toBe(false)
+    expect(drainIsOpen(39.99, true)).toBe(false)
+    expect(drainIsOpen(40, true)).toBe(true)
+    expect(drainIsOpen(95, true)).toBe(true)
+  })
+
+  it('agrees with serviceState about every drain, at every fill', () => {
+    // The badge and the queue are two readings of one rule, so they can never
+    // be allowed to disagree about the same drain.
+    for (let v = 0; v <= 100; v += 0.25) {
+      for (const hasHistory of [true, false]) {
+        expect(drainIsOpen(v, hasHistory)).toBe(serviceState(v, hasHistory) !== 'serviced')
+      }
+    }
+  })
+
+  it('keeps a blocked drain in the queue — the terminal state is the most urgent', () => {
+    const blocked = DRAIN_NODES.map(n => ({ ...n, fillPct: 95 }))
+    for (const n of blocked) expect(drainIsOpen(n.fillPct, true)).toBe(true)
+  })
+})
 
 describe('bandOf / bandColor / bandLabel', () => {
   it.each([
@@ -258,7 +338,7 @@ describe('drainWhy', () => {
     const zone = { id: 'z', name: 'Test Zone', drainageCapacity: 0.9, population: 50000 }
     const node = { zone: 'z', name: 'Drain Z-1', fillPct: 10, lastServiceHrs: 2 }
     const whys = drainWhy(drainRisk({ zone, drainNodes: [node] }), { zone })
-    expect(whys).toEqual(['Drain Z-1 is holding at 10% — nothing critical yet'])
+    expect(whys).toEqual(['Drain Z-1 is holding at 10.00% — under the 40% service line, unserved for 2h'])
   })
 
   it('handles a missing zone', () => {
